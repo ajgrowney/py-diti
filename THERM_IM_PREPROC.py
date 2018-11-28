@@ -11,6 +11,8 @@ from sklearn.decomposition import FastICA, PCA
 def rgbProcData(im, new_file_name):
     height, width, channels = im.shape
     print height, width, channels
+    b,g,r = cv2.split(im)
+    colors = ("b","g","r")
     #im = cv2.split(im)
     if channels != 3:
         return False
@@ -49,6 +51,39 @@ def rgbProcData(im, new_file_name):
     ax1.hist([im_r_arr,im_g_arr,im_b_arr], bins=np.arange(256))
     ax1.set_ylim(0,1500)
     plt.show()
+
+    # for row in range(height):
+    #     for column in range(width):
+    #         pix_stdev = statistics.stdev(im[row,column])
+    #         if pix_stdev > 8:
+    #             n_r += 1
+    #             b,g,r = im[row,column]
+    #             im_r_arr.append(r)
+    #             im_g_arr.append(g)
+    #             im_b_arr.append(b)
+    #             new_r_im_data.append((r,0,0))
+    #             new_g_im_data.append((0,g,0))
+    #             new_b_im_data.append((0,0,b))
+    #         else:
+    #             im_r_arr.append(0)
+    #             im_g_arr.append(0)
+    #             im_b_arr.append(0)
+    #             new_r_im_data.append((0,0,0))
+    #             new_g_im_data.append((0,0,0))
+    #             new_b_im_data.append((0,0,0))
+
+    b = b.flatten()
+    g = g.flatten()
+    r = r.flatten()
+    print "Blue: Skew=", skew(b), " Kurtosis=", kurtosis(b)
+    print "Green Skew: ", skew(g), " Kurtosis=", kurtosis(g)
+    print "Red Skew: ", skew(r), " Kurtosis=", kurtosis(r)
+    # fig, axes = plt.subplot(2,2,sharey='row')
+    # axes[0,0].hist([im_r_arr,im_g_arr,im_b_arr], bins=np.arange(256))
+    # axes[0,0].set_ylim(0,1500)
+    # axes[0,1].hist(im_r_arr, bins=np.arange(256))
+    # axes[1,0].hist(im_g_arr, bins=np.arange(256))
+    # axes[1,1].hist(im_b_arr, bins=np.arange(256))
     #plt.hist(im_g_arr, bins=np.arange(256))
     #plt.hist(im_b_arr, bins=np.arange(256))
 
@@ -75,25 +110,25 @@ def grayProcData(im):
 
 # Description:
 # @Param: image{'*.jpg','*.png'} - image to be analyzed and processed into classifier data
-# @Param: new_file_name {String} - 
+# @Param: new_file_name {String} -
 
 def preProcImage(image,new_file_name):
     test_im = cv2.imread('./testing_images/'+image,1)
     gray_im = cv2.imread('./testing_images/'+image,0)
     #im_ycbcr = imread(image,mode='YCbCr')
-    
+
     # Utilize the RGB Colorspace to analyze the image and pull statistics
     rgb_proc = rgbProcData(test_im, new_file_name)
     if(rgb_proc == False):
         print "Error in RGB Processing"
-    
+
     grayProcData(gray_im)
 
     # Independent Component Analysis
     # transformer = FastICA(n_components=3)
     # im_ica = transformer.fit(new_r_im_data)
     # im_restored = transformer.inverse_transform(im_ica)
-    
+
 
 
 
