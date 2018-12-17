@@ -14,18 +14,19 @@ def rgbProcData(im, new_file_name):
     print height, width, channels
     b,g,r = cv2.split(im)
     colors = ("b","g","r")
-    #im = cv2.split(im)
     if channels != 3:
         return False
+
+
     new_r_im_data, new_g_im_data, new_b_im_data, im_r_arr, im_g_arr, im_b_arr = ([] for i in range(6))
     left_im = { "red": [], "blue": [], "green": [], "total": []}
     right_im = { "red": [], "blue": [], "green": [], "total": []}
-    
-    # mid: segment the image into left and right side 
-    mid = width/2 
+
+    # mid: segment the image into left and right side
+    mid = width/2
     valid_pixs = []
 
-    
+
     # Traverse the rows of the image
     for row in range(height):
         inner_pixs = []
@@ -55,24 +56,23 @@ def rgbProcData(im, new_file_name):
                 new_r_im_data.append((0,0,0))
                 new_g_im_data.append((0,0,0))
                 new_b_im_data.append((0,0,0))
-                
+
                 if column < mid:
                     left_im["total"].append(im[row,column])
                 else:
                     right_im["total"].append(im[row,column])
         valid_pixs.append(inner_pixs)
-    
+
     # Total Image Statistics
     print "Blue: Skew=", skew(im_b_arr), " Kurtosis=", kurtosis(im_b_arr)
-    print "Green Skew: ", skew(im_g_arr), " Kurtosis=", kurtosis(im_g_arr)
-    print "Red Skew: ", skew(im_r_arr), " Kurtosis=", kurtosis(im_r_arr)
-    
+    print "Green: Skew= ", skew(im_g_arr), " Kurtosis=", kurtosis(im_g_arr)
+    print "Red: Skew= ", skew(im_r_arr), " Kurtosis=", kurtosis(im_r_arr)
+
     # Left Side Statistics
-    total_sum_tuple = reduce(lambda sum_tuple, x: tuple(map((lambda y,z:
-    y+z),x,sum_tuple)), left_im["total"])
+    total_sum_tuple = reduce(lambda sum_tuple, x: tuple(map((lambda y,z: y+z),x,sum_tuple)), left_im["total"])
     print total_sum_tuple
     print "Num Valid Pix", len(valid_pixs)
-     
+
 #    ax1 = plt.subplot()
 #    ax1.hist([im_r_arr,im_g_arr,im_b_arr], bins=np.arange(256))
 #    ax1.set_ylim(0,1500)
