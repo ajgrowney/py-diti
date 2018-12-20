@@ -12,72 +12,60 @@ from sklearn.decomposition import FastICA, PCA
 def rgbProcData(im, new_file_name):
     height, width, channels = im.shape
     print height, width, channels
-    b,g,r = cv2.split(im)
-    colors = ("b","g","r")
-    if channels != 3:
-        return False
-
-
-    new_r_im_data, new_g_im_data, new_b_im_data, im_r_arr, im_g_arr, im_b_arr = ([] for i in range(6))
-    left_im = { "red": [], "blue": [], "green": [], "total": []}
-    right_im = { "red": [], "blue": [], "green": [], "total": []}
-
-    # mid: segment the image into left and right side
-    mid = width/2
-    valid_pixs = []
-
-
-    # Traverse the rows of the image
-    for row in range(height):
-        inner_pixs = []
-
-        # Traverse each column in that row of the image
-        # TODO: Add left and right segmentation
-        for column in range(width):
-            pix_stdev = statistics.stdev(im[row,column])
-            if pix_stdev > 8:
-                inner_pixs.append(column)
-                b,g,r = im[row,column]
-                im_r_arr.append(r)
-                im_g_arr.append(g)
-                im_b_arr.append(b)
-                new_r_im_data.append((r,0,0))
-                new_g_im_data.append((0,g,0))
-                new_b_im_data.append((0,0,b))
-
-                if column < mid:
-                    left_im["total"].append(im[row,column])
-                else:
-                    right_im["total"].append(im[row,column])
+    print np.mean(im[240:480,0:20],axis=(0,1),dtype=np.float64)
+    low = np.array([120,0,120])
+    up = np.array([255,15,255])
+    mask = cv2.inRange(im,low,up)
+    out = cv2.bitwise_and(im,im,mask=mask) # Storing the initial mask
+    imgray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+    for x in xrange(0,height):
+        for y in xrange(0,width):
+            if (out[x][y] != [0,0,0]).all():
+                im[x][y] = [0,0,0]
             else:
-                im_r_arr.append(0)
-                im_g_arr.append(0)
-                im_b_arr.append(0)
-                new_r_im_data.append((0,0,0))
-                new_g_im_data.append((0,0,0))
-                new_b_im_data.append((0,0,0))
+                i=0
+                found = False
+                while(i < 10 and (not found)):
+                    i += 1
+                    if y < (width/2):
+                        if (out[x][y+i] != [0,0,0]).all():
+                            found = True
+                            im[x][y] = [0,0,0]
+                            out[x][y] = [255,0,255]
+                    else:
+                        if (out[x][y-i] != [0,0,0]).all():
+                            found = True
+                            im[x][y] = [0,0,0]
 
-                if column < mid:
-                    left_im["total"].append(im[row,column])
-                else:
-                    right_im["total"].append(im[row,column])
-        valid_pixs.append(inner_pixs)
+    cv2.imshow("im",np.vstack([out,im]))
+    cv2.imshow("im2",imgray)
+    cv2.waitKey(0)
 
-    # Total Image Statistics
-    print "Blue: Skew=", skew(im_b_arr), " Kurtosis=", kurtosis(im_b_arr)
-    print "Green: Skew= ", skew(im_g_arr), " Kurtosis=", kurtosis(im_g_arr)
-    print "Red: Skew= ", skew(im_r_arr), " Kurtosis=", kurtosis(im_r_arr)
 
-    # Left Side Statistics
-    total_sum_tuple = reduce(lambda sum_tuple, x: tuple(map((lambda y,z: y+z),x,sum_tuple)), left_im["total"])
-    print total_sum_tuple
-    print "Num Valid Pix", len(valid_pixs)
+    b,g,r = cv2.split(im)
+    print("Image Mean:",np.mean(im,axis=(0,1),dtype=np.float64))
+    left_im = im[:,0:(width/2)]
+    right_im = im[:,(width/2):width]
+    right_flipped = np.fliplr(right_im)
+    print("Left Image:",np.mean(left_im,axis=(0,1),dtype=np.float64))
+    print("Right Image: ",np.mean(right_im,axis=(0,1),dtype=np.float64))
 
-#    ax1 = plt.subplot()
-#    ax1.hist([im_r_arr,im_g_arr,im_b_arr], bins=np.arange(256))
-#    ax1.set_ylim(0,1500)
-#    plt.show()
+    im_sub = np.subtract(right_flipped,left_im)
+    im_sub2 = np.subtract(left_im,right_flipped)
+    sub_b, sub_g, sub_r = cv2.split(im_sub)
 
+
+    # Image Subtraction Files
+    cv2.imwrite('./testing_results/imgray.jpg',imgray)
+    cv2.imwrite('./testing_results/imsub.jpg',im_sub)
+    cv2.imwrite('./testing_results/imsub2.jpg',im_sub2)
+    cv2.imwrite('./testing_results/imsub_b.jpg',sub_b)
+    cv2.imwrite('./testing_results/imsub_g.jpg',sub_g)
+    cv2.imwrite('./testing_results/imsub_r.jpg',sub_r)
+
+    # Image Left, Right Segemented Files
+    cv2.imwrite('./testing_results/left.jpg',left_im)
+    cv2.imwrite('./testing_results/right.jpg',right_flipped)
 
     b = b.flatten()
     g = g.flatten()
@@ -85,10 +73,21 @@ def rgbProcData(im, new_file_name):
     print "Blue: Skew=", skew(b), " Kurtosis=", kurtosis(b)
     print "Green Skew: ", skew(g), " Kurtosis=", kurtosis(g)
     print "Red Skew: ", skew(r), " Kurtosis=", kurtosis(r)
+    fig, (ax1,ax2,ax3) = plt.subplots(1,3)
+    ax1.hist(b, bins=np.arange(256))
+    ax1.set_ylim(0,1500)
+    ax2.hist(g, bins=np.arange(256), color='green')
+    ax2.set_ylim(0,1500)
+    ax3.hist(r, bins=np.arange(256), color='red')
+    ax3.set_ylim(0,1500)
+    plt.show()
+    return
+
+
 
 
 # Description:
-# @Param im {PIL.Image Object} - image object converted to grayscale for analysis
+# @Param im {CV2 image object/ np.ndarray } - image object converted to grayscale for analysis
 def grayProcData(im):
         # Edge Detection
 
@@ -108,8 +107,8 @@ def grayProcData(im):
 # @Param: new_file_name {String} -
 
 def preProcImage(image,new_file_name):
-    test_im = cv2.imread('../Images/'+image,1)
-    gray_im = cv2.imread('./Images/'+image,cv2.IMREAD_GRAYSCALE)
+    test_im = cv2.imread('./testing_images/'+image,1)
+    gray_im = cv2.imread('./testing_images/'+image,cv2.IMREAD_GRAYSCALE)
     #im_ycbcr = imread(image,mode='YCbCr')
 
     # Utilize the RGB Colorspace to analyze the image and pull statistics
