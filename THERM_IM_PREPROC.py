@@ -1,5 +1,6 @@
 import sys
 import statistics
+import heapq
 import numpy as np
 import cv2
 from scipy.misc import imread
@@ -11,42 +12,38 @@ from sklearn.decomposition import FastICA, PCA
 
 def rgbProcData(im, new_file_name):
     height, width, channels = im.shape
-    print height, width, channels
     print np.mean(im[240:480,0:20],axis=(0,1),dtype=np.float64)
     low = np.array([120,0,120])
     up = np.array([255,15,255])
     mask = cv2.inRange(im,low,up)
     out = cv2.bitwise_and(im,im,mask=mask) # Storing the initial mask
-    imgray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+
+    print((out.shape))
+
+    im_bw = cv2.cvtColor(out, cv2.COLOR_RGB2GRAY)
+
+    im2, contours, hierarchy = cv2.findContours(im_bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours]
+    big_four = heapq.nlargest(4,contour_sizes,key=lambda x: x[0])
+    big_four_contours = list(x[1] for x in big_four)
+
+    print len(big_four)
+
+    cv2.drawContours(out, big_four_contours, -1, (0,255,0), -1)
+
     for x in xrange(0,height):
         for y in xrange(0,width):
-            if (out[x][y] != [0,0,0]).all():
+            if (out[x][y] == [0,255,0]).all():
                 im[x][y] = [0,0,0]
-            else:
-                i=0
-                found = False
-                while(i < 10 and (not found)):
-                    i += 1
-                    if y < (width/2):
-                        if (out[x][y+i] != [0,0,0]).all():
-                            found = True
-                            im[x][y] = [0,0,0]
-                            out[x][y] = [255,0,255]
-                    else:
-                        if (out[x][y-i] != [0,0,0]).all():
-                            found = True
-                            im[x][y] = [0,0,0]
-
-    cv2.imshow("im",np.vstack([out,im]))
-    cv2.imshow("im2",imgray)
-    cv2.waitKey(0)
 
 
     b,g,r = cv2.split(im)
+    left_im = im[:,0:(width/2)] # Take left half of the image
+    right_im = im[:,(width/2):width] # Take right half of the image
+    right_flipped = np.fliplr(right_im) # Flip the right half for image subtraction
+
+    # Image Averages
     print("Image Mean:",np.mean(im,axis=(0,1),dtype=np.float64))
-    left_im = im[:,0:(width/2)]
-    right_im = im[:,(width/2):width]
-    right_flipped = np.fliplr(right_im)
     print("Left Image:",np.mean(left_im,axis=(0,1),dtype=np.float64))
     print("Right Image: ",np.mean(right_im,axis=(0,1),dtype=np.float64))
 
@@ -56,7 +53,10 @@ def rgbProcData(im, new_file_name):
 
 
     # Image Subtraction Files
-    cv2.imwrite('./testing_results/imgray.jpg',imgray)
+    cv2.imwrite('./testing_results/im_out.jpg',out)
+    #cv2.imwrite('./testing_results/im_maskblur.jpg',im_blur)
+    cv2.imwrite('./testing_results/im_updated.jpg',im)
+    cv2.imwrite('./testing_results/imgray.jpg',im_bw)
     cv2.imwrite('./testing_results/imsub.jpg',im_sub)
     cv2.imwrite('./testing_results/imsub2.jpg',im_sub2)
     cv2.imwrite('./testing_results/imsub_b.jpg',sub_b)
@@ -73,14 +73,15 @@ def rgbProcData(im, new_file_name):
     print "Blue: Skew=", skew(b), " Kurtosis=", kurtosis(b)
     print "Green Skew: ", skew(g), " Kurtosis=", kurtosis(g)
     print "Red Skew: ", skew(r), " Kurtosis=", kurtosis(r)
-    fig, (ax1,ax2,ax3) = plt.subplots(1,3)
-    ax1.hist(b, bins=np.arange(256))
-    ax1.set_ylim(0,1500)
-    ax2.hist(g, bins=np.arange(256), color='green')
-    ax2.set_ylim(0,1500)
-    ax3.hist(r, bins=np.arange(256), color='red')
-    ax3.set_ylim(0,1500)
-    plt.show()
+    # Plot the histograms below
+    # fig, (ax1,ax2,ax3) = plt.subplots(1,3)
+    # ax1.hist(b, bins=np.arange(256))
+    # ax1.set_ylim(0,1500)
+    # ax2.hist(g, bins=np.arange(256), color='green')
+    # ax2.set_ylim(0,1500)
+    # ax3.hist(r, bins=np.arange(256), color='red')
+    # ax3.set_ylim(0,1500)
+    # plt.show()
     return
 
 
