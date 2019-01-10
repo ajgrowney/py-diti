@@ -9,34 +9,49 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from sklearn.decomposition import FastICA, PCA
 
+def filterBackground(im):
+    # Background Filtering
+    low = np.array([120,0,120])
+    up = np.array([255,15,255])
+    mask = cv2.inRange(im,low,up)
+    out = cv2.bitwise_and(im,im,mask=mask)
+    im_bw = cv2.cvtColor(out, cv2.COLOR_RGB2GRAY)
+    im_bw = cv2.bitwise_not(im_bw)
+    im_bw[np.where((im_bw < 250))] = 0
+    im2, contours, hierarchy = cv2.findContours(im_bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours]
+    biggest_contour = max(contour_sizes, key=lambda x: x[0])[1]
+    cv2.drawContours(out, [biggest_contour], -1, (0,255,0), -1)
+    out[np.where((out != [0,255,0]).all(axis=2))] = [0,0,0]
+    im[np.where((out == [0,0,0]).all(axis=2))] = [0,0,0]
+    return im
 
 def rgbProcData(im, new_file_name):
     height, width, channels = im.shape
     print np.mean(im[240:480,0:20],axis=(0,1),dtype=np.float64)
-    low = np.array([120,0,120])
-    up = np.array([255,15,255])
-    mask = cv2.inRange(im,low,up)
-    out = cv2.bitwise_and(im,im,mask=mask) # Storing the initial mask
 
-    print((out.shape))
+    im_b = im.copy()
+    im_b[:, :, 1] = 0
+    im_b[:, :, 2] = 0
 
-    im_bw = cv2.cvtColor(out, cv2.COLOR_RGB2GRAY)
+    im_g = im.copy()
+    im_g[:, :, 0] = 0
+    im_g[:, :, 2] = 0
 
-    im2, contours, hierarchy = cv2.findContours(im_bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours]
-    big_four = heapq.nlargest(4,contour_sizes,key=lambda x: x[0])
-    big_four_contours = list(x[1] for x in big_four)
-
-    print len(big_four)
-
-    cv2.drawContours(out, big_four_contours, -1, (0,255,0), -1)
-
-    for x in xrange(0,height):
-        for y in xrange(0,width):
-            if (out[x][y] == [0,255,0]).all():
-                im[x][y] = [0,0,0]
+    im_r = im.copy()
+    im_r[:, :, 0] = 0 # b -> 0
+    im_r[:, :, 1] = 0 # g -> 0
 
 
+    # RGB - Blue
+    cv2.imshow('B-RGB', im_b)
+    # RGB - Green
+    cv2.imshow('G-RGB', im_g)
+    # RGB - Red
+    cv2.imshow('R-RGB', im_r)
+    cv2.waitKey(0)
+
+    # Splitting Image to RGB arrays
     b,g,r = cv2.split(im)
     left_im = im[:,0:(width/2)] # Take left half of the image
     right_im = im[:,(width/2):width] # Take right half of the image
@@ -53,10 +68,10 @@ def rgbProcData(im, new_file_name):
 
 
     # Image Subtraction Files
-    cv2.imwrite('./testing_results/im_out.jpg',out)
-    #cv2.imwrite('./testing_results/im_maskblur.jpg',im_blur)
-    cv2.imwrite('./testing_results/im_updated.jpg',im)
-    cv2.imwrite('./testing_results/imgray.jpg',im_bw)
+    cv2.imwrite('./testing_results/im.jpg',im)
+    cv2.imwrite('./testing_results/im_b.jpg',im_b)
+    cv2.imwrite('./testing_results/im_g.jpg',im_g)
+    cv2.imwrite('./testing_results/im_r.jpg',im_r)
     cv2.imwrite('./testing_results/imsub.jpg',im_sub)
     cv2.imwrite('./testing_results/imsub2.jpg',im_sub2)
     cv2.imwrite('./testing_results/imsub_b.jpg',sub_b)
@@ -73,15 +88,15 @@ def rgbProcData(im, new_file_name):
     print "Blue: Skew=", skew(b), " Kurtosis=", kurtosis(b)
     print "Green Skew: ", skew(g), " Kurtosis=", kurtosis(g)
     print "Red Skew: ", skew(r), " Kurtosis=", kurtosis(r)
-    # Plot the histograms below
-    # fig, (ax1,ax2,ax3) = plt.subplots(1,3)
-    # ax1.hist(b, bins=np.arange(256))
-    # ax1.set_ylim(0,1500)
-    # ax2.hist(g, bins=np.arange(256), color='green')
-    # ax2.set_ylim(0,1500)
-    # ax3.hist(r, bins=np.arange(256), color='red')
-    # ax3.set_ylim(0,1500)
-    # plt.show()
+    #Plot the histograms below
+    fig, (ax1,ax2,ax3) = plt.subplots(1,3)
+    ax1.hist(b, bins=np.arange(256))
+    ax1.set_ylim(0,1500)
+    ax2.hist(g, bins=np.arange(256), color='green')
+    ax2.set_ylim(0,1500)
+    ax3.hist(r, bins=np.arange(256), color='red')
+    ax3.set_ylim(0,1500)
+    plt.show()
     return
 
 
@@ -107,29 +122,21 @@ def grayProcData(im):
 # @Param: image{'*.jpg','*.png'} - image to be analyzed and processed into classifier data
 # @Param: new_file_name {String} -
 
-def preProcImage(image,new_file_name):
+def preProcImage(image):
     test_im = cv2.imread('./testing_images/'+image,1)
     gray_im = cv2.imread('./testing_images/'+image,cv2.IMREAD_GRAYSCALE)
     #im_ycbcr = imread(image,mode='YCbCr')
-
+    test_im = filterBackground(test_im)
     # Utilize the RGB Colorspace to analyze the image and pull statistics
-    rgb_proc = rgbProcData(test_im, new_file_name)
-    if(rgb_proc == False):
-        print "Error in RGB Processing"
+    rgb_proc = rgbProcData(test_im, image)
 
     grayProcData(gray_im)
-
-    # Independent Component Analysis
-    # transformer = FastICA(n_components=3)
-    # im_ica = transformer.fit(new_r_im_data)
-    # im_restored = transformer.inverse_transform(im_ica)
-
 
 def main():
     arg_len = len(sys.argv)
 
-    if arg_len == 3:
-        preProcImage(sys.argv[1],sys.argv[2])
+    if arg_len == 2:
+        preProcImage(sys.argv[1])
         print "We here"
 
 if __name__ == '__main__':
