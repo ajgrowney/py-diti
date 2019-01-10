@@ -1,12 +1,10 @@
 import sys
 import statistics
-import heapq
 import numpy as np
 import cv2
 from scipy.misc import imread
 from scipy.stats import kurtosis, skew
 import matplotlib.pyplot as plt
-from PIL import Image
 from sklearn.decomposition import FastICA, PCA
 
 def filterBackground(im):
@@ -41,15 +39,6 @@ def rgbProcData(im, new_file_name):
     im_r = im.copy()
     im_r[:, :, 0] = 0 # b -> 0
     im_r[:, :, 1] = 0 # g -> 0
-
-
-    # RGB - Blue
-    cv2.imshow('B-RGB', im_b)
-    # RGB - Green
-    cv2.imshow('G-RGB', im_g)
-    # RGB - Red
-    cv2.imshow('R-RGB', im_r)
-    cv2.waitKey(0)
 
     # Splitting Image to RGB arrays
     b,g,r = cv2.split(im)
@@ -89,14 +78,14 @@ def rgbProcData(im, new_file_name):
     print "Green Skew: ", skew(g), " Kurtosis=", kurtosis(g)
     print "Red Skew: ", skew(r), " Kurtosis=", kurtosis(r)
     #Plot the histograms below
-    fig, (ax1,ax2,ax3) = plt.subplots(1,3)
-    ax1.hist(b, bins=np.arange(256))
-    ax1.set_ylim(0,1500)
-    ax2.hist(g, bins=np.arange(256), color='green')
-    ax2.set_ylim(0,1500)
-    ax3.hist(r, bins=np.arange(256), color='red')
-    ax3.set_ylim(0,1500)
-    plt.show()
+    # fig, (ax1,ax2,ax3) = plt.subplots(1,3)
+    # ax1.hist(b, bins=np.arange(256))
+    # ax1.set_ylim(0,1500)
+    # ax2.hist(g, bins=np.arange(256), color='green')
+    # ax2.set_ylim(0,1500)
+    # ax3.hist(r, bins=np.arange(256), color='red')
+    # ax3.set_ylim(0,1500)
+    # plt.show()
     return
 
 
@@ -137,7 +126,6 @@ def main():
 
     if arg_len == 2:
         preProcImage(sys.argv[1])
-        print "We here"
 
 if __name__ == '__main__':
     main()
