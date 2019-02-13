@@ -15,25 +15,6 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
 
-def filterBackground(im,name,suffix):
-
-    # Background Filtering
-    low = np.array([120,0,120])
-    up = np.array([255,15,255])
-    mask = cv2.inRange(im,low,up)
-    out = cv2.bitwise_and(im,im,mask=mask)
-    im_bw = cv2.cvtColor(out, cv2.COLOR_RGB2GRAY)
-    im_bw = cv2.bitwise_not(im_bw)
-    im_bw[np.where((im_bw < 250))] = 0
-    im2, contours, hierarchy = cv2.findContours(im_bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours]
-    biggest_contour = max(contour_sizes, key=lambda x: x[0])[1]
-    cv2.drawContours(out, [biggest_contour], -1, (0,255,0), -1)
-    out[np.where((out != [0,255,0]).all(axis=2))] = [0,0,0]
-    im[np.where((out == [0,0,0]).all(axis=2))] = [0,0,0]
-    cv2.imwrite('./Cancer_Cleaned/'+name+suffix+'.jpg',im)
-    return im
-
 def rgbProcData(im, file_name):
 
     results = {}
@@ -133,11 +114,8 @@ def grayProcData(im):
 # @Param: new_file_name {String} -
 
 def preProcImage(image):
-    f_im = cv2.imread('./Images/'+image+'A2BA-f.jpg',1)
-    fc_im = cv2.imread('./Images/'+image+'A2BA-fc.jpg',1)
-
-    test_f_im = filterBackground(f_im,image,'A2BA-f')
-    test_fc_im = filterBackground(fc_im,image,'A2BA-fc')
+    f_im = cv2.imread('./Cancer_NoBG/'+image+'A2BA-f.jpg',1)
+    fc_im = cv2.imread('./Cancer_NoBG/'+image+'A2BA-fc.jpg',1)
 
     # test_f_imgray = cv2.cvtColor(test_f_im, cv2.COLOR_BGR2GRAY)
     # test_fc_imgray = cv2.cvtColor(test_fc_im, cv2.COLOR_BGR2GRAY)
@@ -176,17 +154,17 @@ def compileHistogramResults(single_im_f, single_im_fc, current_results):
     current_results["means"]["total_fc"].append(single_im_fc['image_mean'])
     return current_results
 
-def displayResults(results):
+def displayResults(results, title):
     fig = plt.figure()
 
     ax = fig.add_subplot(2,2,1)
-    ax.set_title("Skew Data")
+    ax.set_title(title + " Skew Data")
     skew_data = [results["skews"]["r_f"], results["skews"]["r_fc"], results["skews"]["g_f"], results["skews"]["g_fc"], results["skews"]["b_f"], results["skews"]["b_fc"]]
     colors = ['red', 'crimson','green', 'yellow','blue', 'skyblue']
     n, bins, patches = plt.hist(skew_data, 10, color=colors)
 
     ax = fig.add_subplot(2,2,2)
-    ax.set_title("Kurtosis Data")
+    ax.set_title(title + " Kurtosis Data")
     kurt_data = [results["kurtosis"]["r_f"], results["kurtosis"]["r_fc"], results["kurtosis"]["g_f"], results["kurtosis"]["g_fc"], results["kurtosis"]["b_f"], results["kurtosis"]["b_fc"]]
     colors = ['red', 'crimson','green', 'yellow','blue', 'skyblue']
     n, bins, patches = plt.hist(kurt_data, 10, color=colors)
@@ -244,8 +222,17 @@ def main():
         print preProcImage("ArmAna240313")
 
     elif arg_len == 1:
-        test_arr = ["ArmAna240313", "AcoAlm221112", "AguCat100309", "AisMic030513", "AndPet151112"]
-        total_results = {
+        test_arr = ["AguCat100309", "AlaCoi101209", "CasSal240909", "CriMar210909"]
+        no_cancer_arr = ["DorMar021009", ]
+        cancer_arr = ["AguCat100309", "AlaCoi101209", "AlaVic270809", "AlvRaq011009", "CasSal240909", "DelMar140810", "EscMar110610", "EspAlb280409", "FloMar310310", "GamSil050209", "GutAma011209", "GutGum110209", "HerAlm080410", "HerCla210409", "HerRos170909", "HueNie100309", "JoaLui111209", "LirLou110809", "MalArc200809"]
+        conflict_arr = ["CriMar210909", "CruDor221009", "DomMar200809", "EugJul130109", "EugJul170310", "FloFra080409", "GalMar040810", "GarOfe201009", "GomAna270710", "GueEva050710", "LopMar050810"]
+        test_has_cancer = {
+            "AguCat100309": "B",
+            "AlaCoi101209": "B",
+            "CasSal240909": "N",
+            "CriMar210909": "B"
+        }
+        cancer_results = {
             "skews": {
                 "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
             },
@@ -256,11 +243,51 @@ def main():
                 "total_f": [], "total_fc": [], "left_f": [], "left_fc": [], "right_f": [], "right_fc": []
             }
         }
-        for pat in test_arr:
-            pat_res_f, pat_res_fc = preProcImage(pat)
-            total_results = compileHistogramResults(pat_res_f, pat_res_fc, total_results)
+        conflict_results = {
+            "skews": {
+                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
+            },
+            "kurtosis": {
+                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
+            },
+            "means": {
+                "total_f": [], "total_fc": [], "left_f": [], "left_fc": [], "right_f": [], "right_fc": []
+            }
+        }
+        no_cancer_results = {
+            "skews": {
+                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
+            },
+            "kurtosis": {
+                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
+            },
+            "means": {
+                "total_f": [], "total_fc": [], "left_f": [], "left_fc": [], "right_f": [], "right_fc": []
+            }
+        }
 
-        displayResults(total_results)
+        # for pat in test_arr:
+        #     pat_res_f, pat_res_fc = preProcImage(pat)
+        #     if(test_has_cancer[pat] != "N"):
+        #         cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
+        #     else:
+        #         no_cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, no_cancer_results)
+
+        for pat in cancer_arr:
+            try:
+                pat_res_f, pat_res_fc = preProcImage(pat)
+                cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
+            except:
+                print(pat)
+        
+        for pat in conflict_arr:
+            try:
+                pat_res_f, pat_res_fc = preProcImage(pat)
+                conflict_results = compileHistogramResults(pat_res_f,pat_res_fc,conflict_results)
+            except:
+                print(pat)
+        displayResults(cancer_results, "Cancer", )
+        displayResults(conflict_results, "Conflict")
 
 if __name__ == '__main__':
     main()
