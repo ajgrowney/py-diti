@@ -115,9 +115,9 @@ def grayProcData(im):
 # @Param: image{'*.jpg','*.png'} - image to be analyzed and processed into classifier data
 # @Param: new_file_name {String} -
 
-def preProcImage(image):
-    f_im = cv2.imread('./Cancer_Cleaned/'+image+'A2BA-f.jpg',1)
-    fc_im = cv2.imread('./Cancer_Cleaned/'+image+'A2BA-fc.jpg',1)
+def preProcImage(image, folder):
+    f_im = cv2.imread('./'+folder+'/'+image+'A2BA-f.jpg',1)
+    fc_im = cv2.imread('./'+folder+'/'+image+'A2BA-fc.jpg',1)
 
     # test_f_imgray = cv2.cvtColor(test_f_im, cv2.COLOR_BGR2GRAY)
     # test_fc_imgray = cv2.cvtColor(test_fc_im, cv2.COLOR_BGR2GRAY)
@@ -157,8 +157,8 @@ def compileHistogramResults(single_im_f, single_im_fc, current_results):
     return current_results
 
 def displayResults(results, title):
+    print(results)
     fig = plt.figure()
-
     ax = fig.add_subplot(2,2,1)
     ax.set_title(title + " Skew Data")
     skew_data = [results["skews"]["r_f"], results["skews"]["r_fc"], results["skews"]["g_f"], results["skews"]["g_fc"], results["skews"]["b_f"], results["skews"]["b_fc"]]
@@ -195,9 +195,9 @@ def displayResults(results, title):
     plt.show()
 
 
-def noiseReduce(image):
-    f_im = cv2.imread('./Cancer_Cleaned/'+image+'A2BA-f.jpg',1)
-    fc_im = cv2.imread('./Cancer_Cleaned/'+image+'A2BA-fc.jpg',1)
+def noiseReduce(image, folder):
+    f_im = cv2.imread('./'+folder+'/'+image+'A2BA-f.jpg',1)
+    fc_im = cv2.imread('./'+folder+'/'+image+'A2BA-fc.jpg',1)
 
     f_im2 = cv2.medianBlur(f_im,5)
     plt.subplot(1,2,1), plt.imshow(f_im)
@@ -208,7 +208,18 @@ def main():
     arg_len = len(sys.argv)
     if arg_len == 2 and sys.argv[1] == "frontDataAll":
         # Results Object
-        total_results = {
+        cancer_results = {
+            "skews": {
+                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
+            },
+            "kurtosis": {
+                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
+            },
+            "means": {
+                "total_f": [], "total_fc": [], "left_f": [], "left_fc": [], "right_f": [], "right_fc": []
+            }
+        }
+        no_cancer_results = {
             "skews": {
                 "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
             },
@@ -221,21 +232,34 @@ def main():
         }
 
         patlist = open("patients_cancer.txt", "r").readlines()
-        patlist[0] = patlist[0][1:]
+        print(len(patlist))
         for pat in patlist[:-1]:
-            pat = pat.strip().replace('\r','')
-            pat = pat[1::2]
-            pat = pat[:-1]
-            pat_res_f, pat_res_fc = preProcImage(pat)
-            total_results = compileHistogramResults(pat_res_f, pat_res_fc, total_results)
-        displayResults(total_results)
+            try:
+                pat = pat.strip().replace('\r','')
+                pat = pat[1::2]
+                pat = pat[:-1]
+                pat_res_f, pat_res_fc = preProcImage(pat, "Cancer_noBG")
+                cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
+            except:
+                print("Error")
+        displayResults(cancer_results, "Cancer")
+
+        patnocancerlist = open("patients_nocancer.txt", "r").readlines()
+        print(len(patnocancerlist))
+        for pat in patnocancerlist:
+            try:
+                pat = pat.strip().replace('\r','')
+                pat_res_f,pat_res_fc = preProcImage(pat, "Volunteer_noBG")
+                no_cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, no_cancer_results)
+            except:
+                print("Error")
+        displayResults(no_cancer_results, "No Cancer")
+
 
     elif arg_len == 2:
-        print noiseReduce("AcoAlm221112")
+        print noiseReduce("AcoAlm221112","Volunteer_noBG")
 
     elif arg_len == 1:
-        test_arr = ["AguCat100309", "AlaCoi101209", "CasSal240909", "CriMar210909"]
-        no_cancer_arr = ["DorMar021009", ]
         cancer_arr = ["AguCat100309", "AlaCoi101209", "AlaVic270809", "AlvRaq011009", "CasSal240909", "DelMar140810", "EscMar110610", "EspAlb280409", "FloMar310310", "GamSil050209", "GutAma011209", "GutGum110209", "HerAlm080410", "HerCla210409", "HerRos170909", "HueNie100309", "JoaLui111209", "LirLou110809", "MalArc200809"]
         conflict_arr = ["CriMar210909", "CruDor221009", "DomMar200809", "EugJul130109", "EugJul170310", "FloFra080409", "GalMar040810", "GarOfe201009", "GomAna270710", "GueEva050710", "LopMar050810"]
         test_has_cancer = {
@@ -278,28 +302,22 @@ def main():
             }
         }
 
-        # for pat in test_arr:
-        #     pat_res_f, pat_res_fc = preProcImage(pat)
-        #     if(test_has_cancer[pat] != "N"):
-        #         cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
-        #     else:
-        #         no_cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, no_cancer_results)
-
         for pat in cancer_arr:
             try:
-                pat_res_f, pat_res_fc = preProcImage(pat)
+                print(pat)
+                pat_res_f, pat_res_fc = preProcImage(pat, "Cancer_noBG")
                 cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
             except:
                 print(pat)
 
-        for pat in conflict_arr:
-            try:
-                pat_res_f, pat_res_fc = preProcImage(pat)
-                conflict_results = compileHistogramResults(pat_res_f,pat_res_fc,conflict_results)
-            except:
-                print(pat)
-        displayResults(cancer_results, "Cancer", )
-        displayResults(conflict_results, "Conflict")
+        # for pat in conflict_arr:
+        #     try:
+        #         pat_res_f, pat_res_fc = preProcImage(pat, "Volunteer_noBG")
+        #         conflict_results = compileHistogramResults(pat_res_f,pat_res_fc,conflict_results)
+        #     except:
+        #         print(pat)
+        displayResults(cancer_results, "Cancer")
+        # displayResults(conflict_results, "Conflict")
 
 if __name__ == '__main__':
     main()
