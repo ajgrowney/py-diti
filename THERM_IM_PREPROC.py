@@ -84,7 +84,7 @@ def rgbProcData(im, file_name):
     #Plot the histograms below
     # fig, (ax1,ax2,ax3) = plt.subplots(1,3)
     # ax1.hist(b, bins=np.arange(256))
-    # ax1.set_ylim(0,1500)
+    # ax1.set_ylim(0,1500)Cancer_NoBG
     # ax2.hist(g, bins=np.arange(256), color='green')
     # ax2.set_ylim(0,1500)
     # ax3.hist(r, bins=np.arange(256), color='red')
@@ -116,14 +116,14 @@ def grayProcData(im):
 # @Param: new_file_name {String} -
 
 def preProcImage(image):
-    f_im = cv2.imread('./Cancer_NoBG/'+image+'A2BA-f.jpg',1)
-    fc_im = cv2.imread('./Cancer_NoBG/'+image+'A2BA-fc.jpg',1)
+    f_im = cv2.imread('./Cancer_Cleaned/'+image+'A2BA-f.jpg',1)
+    fc_im = cv2.imread('./Cancer_Cleaned/'+image+'A2BA-fc.jpg',1)
 
     # test_f_imgray = cv2.cvtColor(test_f_im, cv2.COLOR_BGR2GRAY)
     # test_fc_imgray = cv2.cvtColor(test_fc_im, cv2.COLOR_BGR2GRAY)
     # cv2.imwrite('./tf_color.jpg',test_f_im)
     # cv2.imwrite('./tfc_color.jpg',test_fc_im)
-    # cv2.imwrite('./tf_gray.jpg',test_f_imgray)
+    # cv2.imwrite('./tf_gray.jpg',test_f_imgray)ArmAna240313
     # cv2.imwrite('./tfc_gray.jpg',test_fc_imgray)
 
     # Utilize the RGB Colorspace to analyze the image and pull statistics
@@ -195,10 +195,14 @@ def displayResults(results, title):
     plt.show()
 
 
-def noiseReduce(im):
-    f_im = cv2.imread('./Cancer_NoBG/'+image+'A2BA-f.jpg',1)
-    fc_im = cv2.imread('./Cancer_NoBG/'+image+'A2BA-fc.jpg',1)
-    
+def noiseReduce(image):
+    f_im = cv2.imread('./Cancer_Cleaned/'+image+'A2BA-f.jpg',1)
+    fc_im = cv2.imread('./Cancer_Cleaned/'+image+'A2BA-fc.jpg',1)
+
+    f_im2 = cv2.medianBlur(f_im,5)
+    plt.subplot(1,2,1), plt.imshow(f_im)
+    plt.subplot(1,2,2), plt.imshow(f_im2)
+    plt.show()
 
 def main():
     arg_len = len(sys.argv)
@@ -227,7 +231,7 @@ def main():
         displayResults(total_results)
 
     elif arg_len == 2:
-        print noiseReduce("ArmAna240313")
+        print noiseReduce("AcoAlm221112")
 
     elif arg_len == 1:
         test_arr = ["AguCat100309", "AlaCoi101209", "CasSal240909", "CriMar210909"]
@@ -287,7 +291,7 @@ def main():
                 cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
             except:
                 print(pat)
-        
+
         for pat in conflict_arr:
             try:
                 pat_res_f, pat_res_fc = preProcImage(pat)
