@@ -15,6 +15,8 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
 
+
+
 def rgbProcData(im, file_name):
 
     results = {}
@@ -192,6 +194,12 @@ def displayResults(results, title):
     ax.set_zlabel('B Values')
     plt.show()
 
+
+def noiseReduce(im):
+    f_im = cv2.imread('./Cancer_NoBG/'+image+'A2BA-f.jpg',1)
+    fc_im = cv2.imread('./Cancer_NoBG/'+image+'A2BA-fc.jpg',1)
+    
+
 def main():
     arg_len = len(sys.argv)
     if arg_len == 2 and sys.argv[1] == "frontDataAll":
@@ -219,7 +227,7 @@ def main():
         displayResults(total_results)
 
     elif arg_len == 2:
-        print preProcImage("ArmAna240313")
+        print noiseReduce("ArmAna240313")
 
     elif arg_len == 1:
         test_arr = ["AguCat100309", "AlaCoi101209", "CasSal240909", "CriMar210909"]
