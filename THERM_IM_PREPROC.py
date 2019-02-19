@@ -84,7 +84,7 @@ def rgbProcData(im, file_name):
     #Plot the histograms below
     # fig, (ax1,ax2,ax3) = plt.subplots(1,3)
     # ax1.hist(b, bins=np.arange(256))
-    # ax1.set_ylim(0,1500)Cancer_NoBG
+    # ax1.set_ylim(0,1500)
     # ax2.hist(g, bins=np.arange(256), color='green')
     # ax2.set_ylim(0,1500)
     # ax3.hist(r, bins=np.arange(256), color='red')
@@ -119,12 +119,6 @@ def preProcImage(image, folder):
     f_im = cv2.imread('./'+folder+'/'+image+'A2BA-f.jpg',1)
     fc_im = cv2.imread('./'+folder+'/'+image+'A2BA-fc.jpg',1)
 
-    # test_f_imgray = cv2.cvtColor(test_f_im, cv2.COLOR_BGR2GRAY)
-    # test_fc_imgray = cv2.cvtColor(test_fc_im, cv2.COLOR_BGR2GRAY)
-    # cv2.imwrite('./tf_color.jpg',test_f_im)
-    # cv2.imwrite('./tfc_color.jpg',test_fc_im)
-    # cv2.imwrite('./tf_gray.jpg',test_f_imgray)ArmAna240313
-    # cv2.imwrite('./tfc_gray.jpg',test_fc_imgray)
 
     # Utilize the RGB Colorspace to analyze the image and pull statistics
     rgb_proc_f = rgbProcData(f_im, image)
@@ -135,10 +129,8 @@ def preProcImage(image, folder):
     # # json.dump(rgb_proc_f, open(fname, 'w'), cls=NumpyEncoder)
     # # json.dump(rgb_proc_fc, open(fcname, 'w'), cls=NumpyEncoder)
 
-
-    # grayProcData(test_f_imgray)
-    # grayProcData(test_fc_imgray)
     return rgb_proc_f, rgb_proc_fc
+
 def compileHistogramResults(single_im_f, single_im_fc, current_results):
     current_results["skews"]["r_fc"].append(single_im_fc['r_skew'])
     current_results["skews"]["r_f"].append(single_im_f['r_skew'])
@@ -157,7 +149,6 @@ def compileHistogramResults(single_im_f, single_im_fc, current_results):
     return current_results
 
 def displayResults(results, title):
-    print(results)
     fig = plt.figure()
     ax = fig.add_subplot(2,2,1)
     ax.set_title(title + " Skew Data")
@@ -197,15 +188,32 @@ def displayResults(results, title):
 
 def noiseReduce(image, folder):
     f_im = cv2.imread('./'+folder+'/'+image+'A2BA-f.jpg',1)
-    fc_im = cv2.imread('./'+folder+'/'+image+'A2BA-fc.jpg',1)
+    fc_im = cv2.imread('./'+folder+'/'+image+'A2BA-fc.jpg',0)
+
+    im_b = f_im.copy()
+    im_b[:, :, 1] = 0
+    im_b[:, :, 2] = 0
+
+    im_g = f_im.copy()
+    im_g[:, :, 0] = 0
+    im_g[:, :, 2] = 0
+
+    im_r = f_im.copy()
+    im_r[:, :, 0] = 0 # b -> 0
+    im_r[:, :, 1] = 0 # g -> 0
+
+    f_im = cv2.cvtColor(im_b,cv2.COLOR_BGR2GRAY)
 
     f_im2 = cv2.medianBlur(f_im,5)
-    plt.subplot(1,2,1), plt.imshow(f_im)
-    plt.subplot(1,2,2), plt.imshow(f_im2)
+    edges = cv2.Canny(f_im2,100,200)
+
+    plt.subplot(1,2,1), plt.imshow(f_im2)
+    plt.subplot(1,2,2), plt.imshow(edges)
     plt.show()
 
 def main():
     arg_len = len(sys.argv)
+
     if arg_len == 2 and sys.argv[1] == "frontDataAll":
         # Results Object
         cancer_results = {
@@ -232,8 +240,7 @@ def main():
         }
 
         patlist = open("patients_cancer.txt", "r").readlines()
-        print(len(patlist))
-        for pat in patlist[:-1]:
+        for pat in patlist:
             try:
                 pat = pat.strip().replace('\r','')
                 pat = pat[1::2]
@@ -241,7 +248,7 @@ def main():
                 pat_res_f, pat_res_fc = preProcImage(pat, "Cancer_noBG")
                 cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
             except:
-                print("Error")
+                print("Error", pat.strip().replace('\r',''))
         displayResults(cancer_results, "Cancer")
 
         patnocancerlist = open("patients_nocancer.txt", "r").readlines()
@@ -258,66 +265,6 @@ def main():
 
     elif arg_len == 2:
         print noiseReduce("AcoAlm221112","Volunteer_noBG")
-
-    elif arg_len == 1:
-        cancer_arr = ["AguCat100309", "AlaCoi101209", "AlaVic270809", "AlvRaq011009", "CasSal240909", "DelMar140810", "EscMar110610", "EspAlb280409", "FloMar310310", "GamSil050209", "GutAma011209", "GutGum110209", "HerAlm080410", "HerCla210409", "HerRos170909", "HueNie100309", "JoaLui111209", "LirLou110809", "MalArc200809"]
-        conflict_arr = ["CriMar210909", "CruDor221009", "DomMar200809", "EugJul130109", "EugJul170310", "FloFra080409", "GalMar040810", "GarOfe201009", "GomAna270710", "GueEva050710", "LopMar050810"]
-        test_has_cancer = {
-            "AguCat100309": "B",
-            "AlaCoi101209": "B",
-            "CasSal240909": "N",
-            "CriMar210909": "B"
-        }
-        cancer_results = {
-            "skews": {
-                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-            },
-            "kurtosis": {
-                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-            },
-            "means": {
-                "total_f": [], "total_fc": [], "left_f": [], "left_fc": [], "right_f": [], "right_fc": []
-            }
-        }
-        conflict_results = {
-            "skews": {
-                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-            },
-            "kurtosis": {
-                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-            },
-            "means": {
-                "total_f": [], "total_fc": [], "left_f": [], "left_fc": [], "right_f": [], "right_fc": []
-            }
-        }
-        no_cancer_results = {
-            "skews": {
-                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-            },
-            "kurtosis": {
-                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-            },
-            "means": {
-                "total_f": [], "total_fc": [], "left_f": [], "left_fc": [], "right_f": [], "right_fc": []
-            }
-        }
-
-        for pat in cancer_arr:
-            try:
-                print(pat)
-                pat_res_f, pat_res_fc = preProcImage(pat, "Cancer_noBG")
-                cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
-            except:
-                print(pat)
-
-        # for pat in conflict_arr:
-        #     try:
-        #         pat_res_f, pat_res_fc = preProcImage(pat, "Volunteer_noBG")
-        #         conflict_results = compileHistogramResults(pat_res_f,pat_res_fc,conflict_results)
-        #     except:
-        #         print(pat)
-        displayResults(cancer_results, "Cancer")
-        # displayResults(conflict_results, "Conflict")
 
 if __name__ == '__main__':
     main()
