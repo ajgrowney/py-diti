@@ -145,8 +145,12 @@ def compileHistogramResults(single_im_f, single_im_fc, current_results):
     current_results["kurtosis"]["b_f"].append(single_im_f['b_kurtosis'])
     current_results["kurtosis"]["g_fc"].append(single_im_fc['g_kurtosis'])
     current_results["kurtosis"]["g_f"].append(single_im_f['g_kurtosis'])
-    current_results["means"]["total_f"].append(single_im_f['image_mean'])
-    current_results["means"]["total_fc"].append(single_im_fc['image_mean'])
+    current_results["means"]["total_f"]["b"].append(single_im_f['image_mean'][0])
+    current_results["means"]["total_f"]["g"].append(single_im_f['image_mean'][1])
+    current_results["means"]["total_f"]["r"].append(single_im_f['image_mean'][2])
+    current_results["means"]["total_fc"]["b"].append(single_im_fc['image_mean'][0])
+    current_results["means"]["total_fc"]["g"].append(single_im_fc['image_mean'][1])
+    current_results["means"]["total_fc"]["r"].append(single_im_fc['image_mean'][2])
     return current_results
 
 def displayResults(results, title):
@@ -165,9 +169,9 @@ def displayResults(results, title):
 
     ax = fig.add_subplot(2,2,3, projection='3d')
     ax.set_title("Image Means - F")
-    xf_vals = list(x[0] for x in results["means"]['total_f'])
-    yf_vals = list(x[1] for x in results["means"]['total_f'])
-    zf_vals = list(x[2] for x in results["means"]['total_f'])
+    xf_vals = results["means"]['total_f']["r"]
+    yf_vals = results["means"]['total_f']["g"]
+    zf_vals = results["means"]['total_f']["b"]
 
     ax.scatter(xf_vals, yf_vals, zf_vals)
     ax.set_xlabel('R Values')
@@ -176,9 +180,9 @@ def displayResults(results, title):
 
     ax = fig.add_subplot(2,2,4, projection='3d')
     ax.set_title("Image Means - FC")
-    xfc_vals = list(x[0] for x in results["means"]['total_fc'])
-    yfc_vals = list(x[1] for x in results["means"]['total_fc'])
-    zfc_vals = list(x[2] for x in results["means"]['total_fc'])
+    xfc_vals = results["means"]['total_fc']["r"]
+    yfc_vals = results["means"]['total_fc']["g"]
+    zfc_vals = results["means"]['total_fc']["b"]
 
     ax.scatter(xfc_vals, yfc_vals, zfc_vals)
     ax.set_xlabel('R Values')
@@ -224,10 +228,10 @@ def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
     f = open(filename,'w')
 
     with f:
-        fieldnames = ['skews_r_f','skews_r_fc','skews_g_f','skews_g_fc', 'skews_b_f','skews_b_fc','kurtosis_r_f','kurtosis_r_fc','kurtosis_g_f','kurtosis_g_fc', 'kurtosis_b_f','kurtosis_b_fc', 'mean_total_f', 'mean_total_fc','cancer']
+        fieldnames = ['skews_r_f','skews_r_fc','skews_g_f','skews_g_fc', 'skews_b_f','skews_b_fc','kurtosis_r_f','kurtosis_r_fc','kurtosis_g_f','kurtosis_g_fc', 'kurtosis_b_f','kurtosis_b_fc', 'mean_total_f_r', 'mean_total_f_g', 'mean_total_f_b', 'mean_total_fc_r', 'mean_total_fc_g', 'mean_total_fc_b', 'cancer']
         writer = csv.DictWriter(f,fieldnames=fieldnames)
         writer.writeheader()
-        for i in range(len(cancer_obj["means"]["total_f"])):
+        for i in range(len(cancer_obj["means"]["total_f"]["r"])):
             writer.writerow(
                 {
                     'skews_r_f': cancer_obj["skews"]["r_f"][i],
@@ -242,13 +246,17 @@ def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
                     'kurtosis_g_fc': cancer_obj["kurtosis"]["g_fc"][i],
                     'kurtosis_b_f': cancer_obj["kurtosis"]["b_f"][i],
                     'kurtosis_b_fc': cancer_obj["kurtosis"]["b_fc"][i],
-                    'mean_total_f_r': cancer_obj["means"]["total_f"][i],
-                    'mean_total_fc_r': cancer_obj["means"]["total_fc"][i],
+                    'mean_total_f_r': cancer_obj["means"]["total_f"]["r"][i],
+                    'mean_total_fc_r': cancer_obj["means"]["total_fc"]["r"][i],
+                    'mean_total_f_g': cancer_obj["means"]["total_f"]["g"][i],
+                    'mean_total_fc_g': cancer_obj["means"]["total_fc"]["g"][i],
+                    'mean_total_f_b': cancer_obj["means"]["total_f"]["b"][i],
+                    'mean_total_fc_b': cancer_obj["means"]["total_fc"]["b"][i],
                     'cancer': 'Y'
                 }
             )
-        
-        for j in range(len(nocancer_obj["means"]["total_f"])):
+
+        for j in range(len(nocancer_obj["means"]["total_f"]["r"])):
             writer.writerow(
                 {
                     'skews_r_f': nocancer_obj["skews"]["r_f"][j],
@@ -263,12 +271,16 @@ def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
                     'kurtosis_g_fc': nocancer_obj["kurtosis"]["g_fc"][j],
                     'kurtosis_b_f': nocancer_obj["kurtosis"]["b_f"][j],
                     'kurtosis_b_fc': nocancer_obj["kurtosis"]["b_fc"][j],
-                    'mean_total_f': nocancer_obj["means"]["total_f"][j],
-                    'mean_total_fc': nocancer_obj["means"]["total_fc"][j],
+                    'mean_total_f_r': nocancer_obj["means"]["total_f"]["r"][j],
+                    'mean_total_fc_r': nocancer_obj["means"]["total_fc"]["r"][j],
+                    'mean_total_f_g': nocancer_obj["means"]["total_f"]["g"][j],
+                    'mean_total_fc_g': nocancer_obj["means"]["total_fc"]["g"][j],
+                    'mean_total_f_b': nocancer_obj["means"]["total_f"]["b"][j],
+                    'mean_total_fc_b': nocancer_obj["means"]["total_fc"]["b"][j],
                     'cancer': 'N'
                 }
             )
-        
+
 
 def main():
     arg_len = len(sys.argv)
@@ -283,7 +295,36 @@ def main():
                 "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
             },
             "means": {
-                "total_f": [], "total_fc": [], "left_f": [], "left_fc": [], "right_f": [], "right_fc": []
+                "total_f": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                },
+                "total_fc": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                },
+                "left_f": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                },
+                "left_fc": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                },
+                "right_f": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                },
+                "right_fc": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                }
             }
         }
         no_cancer_results = {
@@ -294,7 +335,36 @@ def main():
                 "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
             },
             "means": {
-                "total_f": [], "total_fc": [], "left_f": [], "left_fc": [], "right_f": [], "right_fc": []
+                "total_f": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                },
+                "total_fc": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                },
+                "left_f": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                },
+                "left_fc": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                },
+                "right_f": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                },
+                "right_fc": {
+                    "r": [],
+                    "g": [],
+                    "b": []
+                }
             }
         }
 
@@ -308,7 +378,7 @@ def main():
                 cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
             except:
                 print("Error", pat.strip().replace('\r',''))
-        displayResults(cancer_results, "Cancer")
+        # displayResults(cancer_results, "Cancer")
 
         patnocancerlist = open("patients_nocancer.txt", "r").readlines()
         print(len(patnocancerlist))
@@ -319,8 +389,8 @@ def main():
                 no_cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, no_cancer_results)
             except:
                 print("Error")
-        displayResults(no_cancer_results, "No Cancer")
-        # writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv.csv')
+        # displayResults(no_cancer_results, "No Cancer")
+        writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv2.csv')
 
 
     elif arg_len == 2:
