@@ -1,6 +1,7 @@
 import sys
 import statistics
 import json
+import csv
 import numpy as np
 import cv2
 from scipy.misc import imread
@@ -202,14 +203,72 @@ def noiseReduce(image, folder):
     im_r[:, :, 0] = 0 # b -> 0
     im_r[:, :, 1] = 0 # g -> 0
 
-    f_im = cv2.cvtColor(im_b,cv2.COLOR_BGR2GRAY)
+    f_imb = cv2.cvtColor(im_b,cv2.COLOR_BGR2GRAY)
+    f_img = cv2.cvtColor(im_g,cv2.COLOR_BGR2GRAY)
+    f_imr = cv2.cvtColor(im_r,cv2.COLOR_BGR2GRAY)
 
-    f_im2 = cv2.medianBlur(f_im,5)
-    edges = cv2.Canny(f_im2,100,200)
 
-    plt.subplot(1,2,1), plt.imshow(f_im2)
-    plt.subplot(1,2,2), plt.imshow(edges)
+    f_imb = cv2.medianBlur(f_imb,5)
+    f_img = cv2.medianBlur(f_img,5)
+    f_imr = cv2.medianBlur(f_imr,5)
+    edges = cv2.Canny(f_imr,100,200)
+
+    plt.subplot(2,2,1), plt.imshow(edges)
+    plt.subplot(2,2,2), plt.imshow(f_imb)
+    plt.subplot(2,2,3), plt.imshow(f_img)
+    plt.subplot(2,2,4), plt.imshow(f_imr)
+
     plt.show()
+
+def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
+    f = open(filename,'w')
+
+    with f:
+        fieldnames = ['skews_r_f','skews_r_fc','skews_g_f','skews_g_fc', 'skews_b_f','skews_b_fc','kurtosis_r_f','kurtosis_r_fc','kurtosis_g_f','kurtosis_g_fc', 'kurtosis_b_f','kurtosis_b_fc', 'mean_total_f', 'mean_total_fc','cancer']
+        writer = csv.DictWriter(f,fieldnames=fieldnames)
+        writer.writeheader()
+        for i in range(len(cancer_obj["means"]["total_f"])):
+            writer.writerow(
+                {
+                    'skews_r_f': cancer_obj["skews"]["r_f"][i],
+                    'skews_r_fc': cancer_obj["skews"]["r_fc"][i],
+                    'skews_g_f': cancer_obj["skews"]["g_f"][i],
+                    'skews_g_fc': cancer_obj["skews"]["g_fc"][i],
+                    'skews_b_f': cancer_obj["skews"]["b_f"][i],
+                    'skews_b_fc': cancer_obj["skews"]["b_fc"][i],
+                    'kurtosis_r_f': cancer_obj["kurtosis"]["r_f"][i],
+                    'kurtosis_r_fc': cancer_obj["kurtosis"]["r_fc"][i],
+                    'kurtosis_g_f': cancer_obj["kurtosis"]["g_f"][i],
+                    'kurtosis_g_fc': cancer_obj["kurtosis"]["g_fc"][i],
+                    'kurtosis_b_f': cancer_obj["kurtosis"]["b_f"][i],
+                    'kurtosis_b_fc': cancer_obj["kurtosis"]["b_fc"][i],
+                    'mean_total_f_r': cancer_obj["means"]["total_f"][i],
+                    'mean_total_fc_r': cancer_obj["means"]["total_fc"][i],
+                    'cancer': 'Y'
+                }
+            )
+        
+        for j in range(len(nocancer_obj["means"]["total_f"])):
+            writer.writerow(
+                {
+                    'skews_r_f': nocancer_obj["skews"]["r_f"][j],
+                    'skews_r_fc': nocancer_obj["skews"]["r_fc"][j],
+                    'skews_g_f': nocancer_obj["skews"]["g_f"][j],
+                    'skews_g_fc': nocancer_obj["skews"]["g_fc"][j],
+                    'skews_b_f': nocancer_obj["skews"]["b_f"][j],
+                    'skews_b_fc': nocancer_obj["skews"]["b_fc"][j],
+                    'kurtosis_r_f': nocancer_obj["kurtosis"]["r_f"][j],
+                    'kurtosis_r_fc': nocancer_obj["kurtosis"]["r_fc"][j],
+                    'kurtosis_g_f': nocancer_obj["kurtosis"]["g_f"][j],
+                    'kurtosis_g_fc': nocancer_obj["kurtosis"]["g_fc"][j],
+                    'kurtosis_b_f': nocancer_obj["kurtosis"]["b_f"][j],
+                    'kurtosis_b_fc': nocancer_obj["kurtosis"]["b_fc"][j],
+                    'mean_total_f': nocancer_obj["means"]["total_f"][j],
+                    'mean_total_fc': nocancer_obj["means"]["total_fc"][j],
+                    'cancer': 'N'
+                }
+            )
+        
 
 def main():
     arg_len = len(sys.argv)
@@ -261,10 +320,11 @@ def main():
             except:
                 print("Error")
         displayResults(no_cancer_results, "No Cancer")
+        # writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv.csv')
 
 
     elif arg_len == 2:
-        print noiseReduce("AcoAlm221112","Volunteer_noBG")
+        print noiseReduce("EscMar261010","Cancer_NoBG")
 
 if __name__ == '__main__':
     main()
