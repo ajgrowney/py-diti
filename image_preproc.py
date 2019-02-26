@@ -54,7 +54,7 @@ def main():
     arg_len = len(sys.argv)
     cancer_list = open("patients_cancer.txt","r").readlines()
     no_cancer_list = open("patients_nocancer.txt","r").readlines()
-    if arg_len == 1:
+    if arg_len == 2:
         cancer_res = []
         nocancer_res = []
         for pat in cancer_list:
@@ -71,9 +71,7 @@ def main():
             except AttributeError as e:
                 print("Patient Not Found: ",pat)
         
-        print(len(cancer_res),len(cancer_res[0]))
-        print(len(nocancer_res),len(nocancer_res[0]))
-        writeResults(cancer_res,nocancer_res,'test2.csv')
+        writeResults(cancer_res,nocancer_res,sys.argv[1])
 
 if __name__ == '__main__':
     main()
