@@ -20,4 +20,4 @@ List[3-5]: kurtosis of r,g,b <br />
 List[6-8]: total image mean pixel r,g,b values <br />
 List[9-11]: left half of image mean pixel r,g,b <br />
 List[12-14]: right half of image mean pixel r,g,b <br />
-List[15-28]: same but with fc version of image
+List[15-29]: same but with fc version of image
