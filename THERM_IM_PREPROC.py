@@ -3,6 +3,7 @@ import statistics
 import json
 import csv
 import numpy as np
+import pandas as pd
 import cv2
 from scipy.misc import imread
 from scipy.stats import kurtosis, skew
@@ -281,10 +282,24 @@ def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
                 }
             )
 
+def subtractedImage(pat,folder):
+    df = pd.read_csv('./'+folder+'/'+pat+'A2BA-f.csv',header=None)
+    for col in df:
+        df[col].apply(lambda x: 0.0 if x < 30.0 else x)
+    df_left = df[df.columns[0:320]]
+    df_right = df[df.columns[320:640]]
+    cond_left = df_left[:] != 0
+    cond_right = df_right[:] != 0
+    print(df_left[cond_left].mean().mean())
+    print(df_right[cond_right].mean().mean())
+    print(df.mean().mean())
+
 
 def main():
     arg_len = len(sys.argv)
 
+    if arg_len == 2 and sys.argv[1] == "subtractImage":
+        subtractedImage("AcoAlm221112", "Temp_Cancer")
     if arg_len == 2 and sys.argv[1] == "frontDataAll":
         # Results Object
         cancer_results = {
@@ -393,7 +408,7 @@ def main():
         writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv2.csv')
 
 
-    elif arg_len == 2:
+    elif arg_len == 2 and sys.argv[1] == "noiseReduce":
         print noiseReduce("EscMar261010","Cancer_NoBG")
 
 if __name__ == '__main__':
