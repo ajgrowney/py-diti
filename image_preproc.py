@@ -7,7 +7,7 @@ from writeCsvData import writeResults
 
 # Param: f_im { cv2 Image } - f version of the front facing patient image
 # Param: fc_im { cv2 Image } - fc version of the front facing patient image
-# Return: { List } - concatentation of the processing of f and fc image lists
+# Return: { List } - concatenation of the processing of f and fc image lists
 def processPatient(f_im, fc_im):
     f_res, fc_res = rgbProcData(f_im), rgbProcData(fc_im)
     patient_results = f_res + fc_res
