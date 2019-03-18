@@ -5,19 +5,12 @@ import csv
 import numpy as np
 import pandas as pd
 import cv2
+import colorcorrect.algorithm as cca
 from scipy.misc import imread
 from scipy.stats import kurtosis, skew
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import FastICA, PCA
-
-class NumpyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return json.JSONEncoder.default(self, obj)
-
-
 
 def rgbProcData(im, file_name):
 
@@ -125,11 +118,6 @@ def preProcImage(image, folder):
     # Utilize the RGB Colorspace to analyze the image and pull statistics
     rgb_proc_f = rgbProcData(f_im, image)
     rgb_proc_fc = rgbProcData(fc_im,image)
-
-    # # fname = './testing_results/json_results/'+image+'_f_data.txt'
-    # # fcname = './testing_results/json_results/'+image+'_fc_data.txt'
-    # # json.dump(rgb_proc_f, open(fname, 'w'), cls=NumpyEncoder)
-    # # json.dump(rgb_proc_fc, open(fcname, 'w'), cls=NumpyEncoder)
 
     return rgb_proc_f, rgb_proc_fc
 
@@ -282,24 +270,22 @@ def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
                 }
             )
 
-def subtractedImage(pat,folder):
-    df = pd.read_csv('./'+folder+'/'+pat+'A2BA-f.csv',header=None)
-    for col in df:
-        df[col].apply(lambda x: 0.0 if x < 30.0 else x)
-    df_left = df[df.columns[0:320]]
-    df_right = df[df.columns[320:640]]
-    cond_left = df_left[:] != 0
-    cond_right = df_right[:] != 0
-    print(df_left[cond_left].mean().mean())
-    print(df_right[cond_right].mean().mean())
-    print(df.mean().mean())
 
+def retinex(patString, folder):
+    f_im = cv2.imread('./'+folder+'/'+patString+'A2BA-f.jpg',1)
+    fc_im = cv2.imread('./'+folder+'/'+patString+'A2BA-fc.jpg',1)
+    a = cca.retinex_with_adjust(f_im)
+    b = cca.retinex_with_adjust(fc_im)
+    plt.subplot(4,1,1), plt.imshow(a)
+    plt.subplot(4,1,2), plt.imshow(f_im)
+    plt.subplot(4,1,3), plt.imshow(b)
+    plt.subplot(4,1,4), plt.imshow(fc_im)
+    plt.show()
+    return []
 
 def main():
     arg_len = len(sys.argv)
 
-    if arg_len == 2 and sys.argv[1] == "subtractImage":
-        subtractedImage("AcoAlm221112", "Temp_Cancer")
     if arg_len == 2 and sys.argv[1] == "frontDataAll":
         # Results Object
         cancer_results = {
@@ -407,7 +393,8 @@ def main():
         # displayResults(no_cancer_results, "No Cancer")
         writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv2.csv')
 
-
+    elif arg_len == 2 and sys.argv[1] == "retinex":
+        retinex("ArvKar140912", "Images_noBG")
     elif arg_len == 2 and sys.argv[1] == "noiseReduce":
         print noiseReduce("EscMar261010","Cancer_NoBG")
 

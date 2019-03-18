@@ -8,7 +8,8 @@ breast cancer using machine learning
 ### image_preproc.py
 Command: python image_preproc.py 'results.csv'
 Description: Uses the txt files from './patientsAssignments/' folder to discover our cancerous vs non-cancerous
-sets. After splitting into the sets, it reads the processPatient function data into result arrays which can be written into the 'results.csv' file if desired.
+sets. After splitting into the sets, it reads the processPatient function data into result arrays.<br />
+(If desired) You can enter a filename like 'results.csv' in the command to save the output to a csv file.
 
 ### fAndrew.py
 Description: Standalone function built to return a vector of image metadata for our ensemble classifier. The input parameter should be an image file, preferably read in by OpenCV's cv2.imread function. The function computes a series of statistics documented below.
