@@ -112,7 +112,11 @@ def grayProcData(im):
 
 def preProcImage(image, folder):
     f_im = cv2.imread('./'+folder+'/'+image+'A2BA-f.jpg',1)
+    b,g,r = cv2.split(f_im)
+    f_im = cv2.merge([r,g,b])
     fc_im = cv2.imread('./'+folder+'/'+image+'A2BA-fc.jpg',1)
+    b,g,r = cv2.split(fc_im)
+    fc_im = cv2.merge([r,g,b])
 
 
     # Utilize the RGB Colorspace to analyze the image and pull statistics
@@ -272,10 +276,15 @@ def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
 
 
 def retinex(patString, folder):
-    f_im = cv2.imread('./'+folder+'/'+patString+'A2BA-f.jpg',1)
-    fc_im = cv2.imread('./'+folder+'/'+patString+'A2BA-fc.jpg',1)
-    a = cca.retinex_with_adjust(f_im)
-    b = cca.retinex_with_adjust(fc_im)
+    print('./'+folder+'/'+patString+'A2BA-f.jpg')
+    f_im = cv2.imread('./'+folder+'/'+patString+'A2BA-f.jpg',-1)
+    b,g,r = cv2.split(f_im)
+    f_im = cv2.merge([r,g,b])
+    fc_im = cv2.imread('./'+folder+'/'+patString+'A2BA-fc.jpg',-1)
+    b,g,r = cv2.split(fc_im)
+    fc_im = cv2.merge([r,g,b])
+    a = cca.retinex(f_im)
+    b = cca.retinex(fc_im)
     plt.subplot(4,1,1), plt.imshow(a)
     plt.subplot(4,1,2), plt.imshow(f_im)
     plt.subplot(4,1,3), plt.imshow(b)
@@ -369,29 +378,29 @@ def main():
             }
         }
 
-        patlist = open("patients_cancer.txt", "r").readlines()
+        patlist = open("./patientAssignments/patients_cancer.txt", "r").readlines()
         for pat in patlist:
             try:
-                pat = pat.strip().replace('\r','')
-                pat = pat[1::2]
-                pat = pat[:-1]
-                pat_res_f, pat_res_fc = preProcImage(pat, "Cancer_noBG")
+                pat = pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','')
+                # pat = pat[1::2]
+                # pat = pat[:-1]
+                pat_res_f, pat_res_fc = preProcImage(pat, "Images_noBG")
                 cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
             except:
                 print("Error", pat.strip().replace('\r',''))
         # displayResults(cancer_results, "Cancer")
 
-        patnocancerlist = open("patients_nocancer.txt", "r").readlines()
+        patnocancerlist = open("./patientAssignments/patients_nocancer.txt", "r").readlines()
         print(len(patnocancerlist))
         for pat in patnocancerlist:
             try:
-                pat = pat.strip().replace('\r','')
-                pat_res_f,pat_res_fc = preProcImage(pat, "Volunteer_noBG")
+                pat = pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','')
+                pat_res_f,pat_res_fc = preProcImage(pat, "Images_noBG")
                 no_cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, no_cancer_results)
             except:
                 print("Error")
         # displayResults(no_cancer_results, "No Cancer")
-        writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv2.csv')
+        writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv3.csv')
 
     elif arg_len == 2 and sys.argv[1] == "retinex":
         retinex("ArvKar140912", "Images_noBG")
