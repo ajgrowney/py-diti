@@ -276,20 +276,21 @@ def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
 
 
 def retinex(patString, folder):
-    print('./'+folder+'/'+patString+'A2BA-f.jpg')
     f_im = cv2.imread('./'+folder+'/'+patString+'A2BA-f.jpg',-1)
-    b,g,r = cv2.split(f_im)
-    f_im = cv2.merge([r,g,b])
+    # b,g,r = cv2.split(f_im)
+    # f_im = cv2.merge([r,g,b])
     fc_im = cv2.imread('./'+folder+'/'+patString+'A2BA-fc.jpg',-1)
-    b,g,r = cv2.split(fc_im)
-    fc_im = cv2.merge([r,g,b])
+    # b,g,r = cv2.split(fc_im)
+    # fc_im = cv2.merge([r,g,b])
     a = cca.retinex(f_im)
     b = cca.retinex(fc_im)
-    plt.subplot(4,1,1), plt.imshow(a)
-    plt.subplot(4,1,2), plt.imshow(f_im)
-    plt.subplot(4,1,3), plt.imshow(b)
-    plt.subplot(4,1,4), plt.imshow(fc_im)
-    plt.show()
+    # plt.subplot(4,1,1), plt.imshow(a)
+    # plt.subplot(4,1,2), plt.imshow(f_im)
+    # plt.subplot(4,1,3), plt.imshow(b)
+    # plt.subplot(4,1,4), plt.imshow(fc_im)
+    # plt.show()
+    cv2.imwrite('./Images_retinex/'+patString+'A2BA-f.jpg',a)
+    cv2.imwrite('./Images_retinex/'+patString+'A2BA-fc.jpg',b)
     return []
 
 def main():
@@ -379,11 +380,9 @@ def main():
         }
 
         patlist = open("./patientAssignments/patients_cancer.txt", "r").readlines()
+        patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
         for pat in patlist:
             try:
-                pat = pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','')
-                # pat = pat[1::2]
-                # pat = pat[:-1]
                 pat_res_f, pat_res_fc = preProcImage(pat, "Images_noBG")
                 cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
             except:
@@ -391,21 +390,32 @@ def main():
         # displayResults(cancer_results, "Cancer")
 
         patnocancerlist = open("./patientAssignments/patients_nocancer.txt", "r").readlines()
+        patnocancerlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patnocancerlist]
+
         print(len(patnocancerlist))
         for pat in patnocancerlist:
             try:
-                pat = pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','')
                 pat_res_f,pat_res_fc = preProcImage(pat, "Images_noBG")
                 no_cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, no_cancer_results)
             except:
                 print("Error")
         # displayResults(no_cancer_results, "No Cancer")
-        writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv3.csv')
+        # writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv4.csv')
 
     elif arg_len == 2 and sys.argv[1] == "retinex":
-        retinex("ArvKar140912", "Images_noBG")
+        patlist = open("./patientAssignments/patients_cancer.txt", "r").readlines()
+        patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
+        for pat in patlist:
+            retinex(pat, "Images_noBG")
+
+        patnocancerlist = open("./patientAssignments/patients_nocancer.txt", "r").readlines()
+        patnocancerlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patnocancerlist]
+
+        for pat in patnocancerlist:
+                retinex(pat, "Images_noBG")
+
     elif arg_len == 2 and sys.argv[1] == "noiseReduce":
-        print noiseReduce("EscMar261010","Cancer_NoBG")
+        print noiseReduce("EscMar261010","Images_noBG")
 
 if __name__ == '__main__':
     main()
