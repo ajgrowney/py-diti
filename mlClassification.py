@@ -1,15 +1,39 @@
+from sklearn.svm import SVC
 from fAndrew import rgbProcData
 from fNatalie import tempProcData
-from carter import clf
+from fCarter import infer
+import numpy as np
+import pickle
 
-def NCA(temp_csv, image):
+
+def csvToImage(csv):
+    return []
+
+
+def loadClassifier():
+    clf = pickle.load(open('final_model.sav','rb'))
+    return clf
+
+
+# C = 10, gamma = .0001
+def NCA(temp_csv):
+    # Conver CSV to Image
+    image = csvToImage(temp_csv)
+
+    # Calculate Pre-Processing Statistics
     results_natalie = tempProcData(temp_csv)
+    results_andrew = rgbProcData(image)
+    results_carter = infer(image)
 
-    results_andrew = rgbProcData(im)
+    # Combine statistics
+    total_proc_data = [results_natalie + results_andrew + results_carter]
 
-    total_proc_data = results_natalie + results_andrew
+
+    classifier = loadClassifier()
+    print(type(classifier))
+    res = classifier.predict(total_proc_data)
+    print(res)
+    return res, {}
 
 
-    clf.predict(image)
-
-    return 0.5, {}
+NCA(np.array([]))

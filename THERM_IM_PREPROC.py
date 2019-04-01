@@ -13,7 +13,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import FastICA, PCA
 
 def rgbProcData(im, file_name):
-
+    
     results = {}
     height, width, channels = im.shape
 

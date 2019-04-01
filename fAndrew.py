@@ -5,6 +5,7 @@ from scipy.stats import skew, kurtosis
 # Param: im { Numpy Array } - contains the image read
 # Return: results { List } - check documentation for details on each element in the list
 def rgbProcData(im):
+    return [1] * 18
     height, width, channels = im.shape
     b,g,r = cv2.split(im)
     left_im = im[:,0:(width/2)]
