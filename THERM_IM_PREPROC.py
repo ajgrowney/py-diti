@@ -293,6 +293,46 @@ def retinex(patString, folder):
     cv2.imwrite('./Images_retinex/'+patString+'A2BA-fc.jpg',b)
     return []
 
+def singleImHist(im):
+    b,g,r = cv2.split(im)
+
+    b = b.flatten()
+    g = g.flatten()
+    r = r.flatten()
+    # Plot the histograms below
+    # fig, (ax1,ax2,ax3) = plt.subplots(1,3)
+    # fig.suptitle("Single Image Histogram")
+    # ax1.hist(b, bins=np.arange(256),color='blue', ec="blue")
+    # ax1.set_ylim(0,1500)
+    # ax2.hist(g, bins=np.arange(256), color='green', ec="green")
+    # ax2.set_ylim(0,1500)
+    # ax3.hist(r, bins=np.arange(256), color="red",ec="red")
+    # ax3.set_ylim(0,1500)
+    # plt.show()
+    return b,g,r
+
+def totalImHist(im,b_total,g_total,r_total):
+    b,g,r = cv2.split(im)
+    b = b.flatten()
+    g = g.flatten()
+    r = r.flatten()
+    b_total = np.concatenate([b_total,b])
+    g_total = np.concatenate([g_total,g])
+    r_total = np.concatenate([r_total,r])
+    return b_total, g_total, r_total
+
+def showtotalImHist(b,g,r):
+    # Plot the histograms below
+    fig, (ax1,ax2,ax3) = plt.subplots(1,3)
+    fig.suptitle("Total Image Histogram")
+    ax1.hist(b, bins=np.arange(256),color='blue', ec="blue")
+    # ax1.set_ylim(0,1500)
+    ax2.hist(g, bins=np.arange(256), color='green', ec="green")
+    # ax2.set_ylim(0,1500)
+    ax3.hist(r, bins=np.arange(256), color="red",ec="red")
+    # ax3.set_ylim(0,1500)
+    plt.show()
+
 def main():
     arg_len = len(sys.argv)
 
@@ -412,10 +452,57 @@ def main():
         patnocancerlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patnocancerlist]
 
         for pat in patnocancerlist:
-                retinex(pat, "Images_noBG")
+            retinex(pat, "Images_noBG")
 
     elif arg_len == 2 and sys.argv[1] == "noiseReduce":
-        print noiseReduce("EscMar261010","Images_noBG")
+        print(noiseReduce("EscMar261010","Images_noBG"))
+
+    elif arg_len == 2 and sys.argv[1] == "singleImageHist":
+        patlist = open("./patientAssignments/patients_cancer.txt", "r").readlines()
+        patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
+        patlist = [patlist[0]]
+        for pat in patlist:
+            print('./Images_noBG/'+pat+'A2BA-f.jpg')
+            f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
+            fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
+            singleImHist(f_im)
+            singleImHist(fc_im)
+
+        patnocancerlist = open("./patientAssignments/patients_nocancer.txt", "r").readlines()
+        patnocancerlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patnocancerlist]
+        patnocancerlist = [patnocancerlist[0]]
+
+        for pat in patnocancerlist:
+            f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
+            fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
+            singleImHist(f_im)
+            singleImHist(fc_im)
+
+    elif arg_len == 2 and sys.argv[1] == "totalImageHist":
+        patlist = open("./patientAssignments/patients_cancer.txt", "r").readlines()
+        patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
+        patlist = [patlist[0]]
+        r_t, g_t, b_t = np.array([]), np.array([]), np.array([])
+
+        for pat in patlist:
+            print('./Images_noBG/'+pat+'A2BA-f.jpg')
+            f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
+            fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
+            r_t, g_t, b_t = totalImHist(f_im,b_t,g_t,r_t)
+            r_t, g_t, b_t = totalImHist(fc_im,b_t,g_t,r_t)
+
+        showtotalImHist(b_t,g_t,r_t)
+        patnocancerlist = open("./patientAssignments/patients_nocancer.txt", "r").readlines()
+        patnocancerlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patnocancerlist]
+        patnocancerlist = [patnocancerlist[0]]
+        r_t, g_t, b_t = np.array([]), np.array([]), np.array([])
+
+        for pat in patnocancerlist:
+            f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
+            fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
+            r_t, g_t, b_t = totalImHist(f_im,b_t,g_t,r_t)
+            r_t, g_t, b_t = totalImHist(fc_im,b_t,g_t,r_t)
+        showtotalImHist(b_t,g_t,r_t)
 
 if __name__ == '__main__':
     main()
