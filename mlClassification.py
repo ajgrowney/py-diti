@@ -23,7 +23,7 @@ def NCA(temp_csv):
     # Calculate Pre-Processing Statistics
     results_natalie = tempProcData(temp_csv)
     results_andrew = rgbProcData(image)
-    results_carter = infer(image)
+    results_carter = infer(image,results_andrew, results_natalie)
 
     # Combine statistics
     total_proc_data = [results_natalie + results_andrew + results_carter]
