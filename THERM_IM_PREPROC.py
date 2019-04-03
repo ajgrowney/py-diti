@@ -5,7 +5,7 @@ import csv
 import numpy as np
 import pandas as pd
 import cv2
-import colorcorrect.algorithm as cca
+#import colorcorrect.algorithm as cca
 from scipy.misc import imread
 from scipy.stats import kurtosis, skew
 import matplotlib.pyplot as plt
@@ -333,6 +333,29 @@ def showtotalImHist(b,g,r):
     # ax3.set_ylim(0,1500)
     plt.show()
 
+def imageToCSV(image,filename):
+    b,g,r = cv2.split(image)
+    filename_b = filename[:-4] + 'b' + filename[-4:]
+    filename_g = filename[:-4] + 'g' + filename[-4:]
+    filename_r = filename[:-4] + 'r' + filename[-4:]
+    np.savetxt(filename_b,b,delimiter=',')
+    np.savetxt(filename_g,g,delimiter=',')
+    np.savetxt(filename_r,r,delimiter=',')
+        
+def csvToImage(patString,cancer):
+    dir_path = "./"
+    if cancer == 'Y':
+        dir_path = './Images_csv/Cancer/'
+    elif cancer == 'N':
+        dir_path = './Images_csv/Non-Cancer/'
+    b = np.loadtxt(open(dir_path + patString+'A2BA-fb.csv',"rb"), delimiter=',')
+    g = np.loadtxt(open(dir_path + patString+'A2BA-fg.csv',"rb"), delimiter=',')
+    r = np.loadtxt(open(dir_path + patString+'A2BA-fr.csv',"rb"), delimiter=',')
+    im = np.dstack([b,g,r])
+    return im
+
+
+
 def main():
     arg_len = len(sys.argv)
 
@@ -503,6 +526,25 @@ def main():
             r_t, g_t, b_t = totalImHist(f_im,b_t,g_t,r_t)
             r_t, g_t, b_t = totalImHist(fc_im,b_t,g_t,r_t)
         showtotalImHist(b_t,g_t,r_t)
+    elif arg_len == 2 and sys.argv[1] == "imageToCsv":
+        patlist = open("./patientAssignments/patients_cancer.txt", "r").readlines()
+        patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
+        for pat in patlist:
+            print(pat+'A2BA-f.csv')
+            f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
+            fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
+            imageToCSV(f_im, './Images_csv/Cancer/'+pat+'A2BA-f.csv')
+            imageToCSV(fc_im,'./Images_csv/Cancer/'+pat+'A2BA-fc.csv')
 
+        patnocancerlist = open("./patientAssignments/patients_nocancer.txt", "r").readlines()
+        patnocancerlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patnocancerlist]
+
+        for pat in patnocancerlist:
+            f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
+            fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
+            imageToCSV(f_im, './Images_csv/Non-Cancer/'+pat+'A2BA-f.csv')
+            imageToCSV(fc_im, './Images_csv/Non-Cancer/'+pat+'A2BA-fc.csv')
+    elif arg_len == 2 and sys.argv[1] == "csvToImage":
+        csvToImage('AcoAlm221112','N')
 if __name__ == '__main__':
     main()
