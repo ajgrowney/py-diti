@@ -5,88 +5,15 @@ import csv
 import numpy as np
 import pandas as pd
 import cv2
-#import colorcorrect.algorithm as cca
 from scipy.misc import imread
 from scipy.stats import kurtosis, skew
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import FastICA, PCA
 
-def rgbProcData(im, file_name):
-    
-    results = {}
-    height, width, channels = im.shape
-
-    im_b = im.copy()
-    im_b[:, :, 1] = 0
-    im_b[:, :, 2] = 0
-
-    im_g = im.copy()
-    im_g[:, :, 0] = 0
-    im_g[:, :, 2] = 0
-
-    im_r = im.copy()
-    im_r[:, :, 0] = 0 # b -> 0
-    im_r[:, :, 1] = 0 # g -> 0
-
-    # Splitting Image to RGB arrays
-    b,g,r = cv2.split(im)
-    left_im = im[:,0:(width/2)] # Take left half of the image
-    right_im = im[:,(width/2):width] # Take right half of the image
-    right_flipped = np.fliplr(right_im) # Flip the right half for image subtraction
-
-    # Image Averages
-    image_mean = np.mean(im,axis=(0,1),dtype=np.float64)
-    left_mean = np.mean(left_im,axis=(0,1),dtype=np.float64)
-    right_mean = np.mean(right_im,axis=(0,1),dtype=np.float64)
-
-    results["right_mean"] = right_mean
-    results["left_mean"] = left_mean
-    results["image_mean"] = image_mean
-
-    im_sub = np.subtract(right_flipped,left_im)
-    im_sub2 = np.subtract(left_im,right_flipped)
-    sub_b, sub_g, sub_r = cv2.split(im_sub)
-
-
-    # Image Subtraction Files
-    # cv2.imwrite('./testing_results/im.jpg',im)
-    # cv2.imwrite('./testing_results/im_b.jpg',im_b)
-    # cv2.imwrite('./testing_results/im_g.jpg',im_g)
-    # cv2.imwrite('./testing_results/im_r.jpg',im_r)
-    # cv2.imwrite('./testing_results/imsub.jpg',im_sub)
-    # cv2.imwrite('./testing_results/imsub2.jpg',im_sub2)
-    # cv2.imwrite('./testing_results/imsub_b.jpg',sub_b)
-    # cv2.imwrite('./testing_results/imsub_g.jpg',sub_g)
-    # cv2.imwrite('./testing_results/imsub_r.jpg',sub_r)
-
-    # # Image Left, Right Segemented Filesskew
-    # cv2.imwrite('./testing_results/left.jpg',left_im)
-    # cv2.imwrite('./testing_results/right.jpg',right_flipped)
-
-    b = b.flatten()
-    g = g.flatten()
-    r = r.flatten()
-
-    results["b_skew"] = skew(b)
-    results["g_skew"] = skew(g)
-    results["r_skew"] = skew(r)
-
-    results["b_kurtosis"] = kurtosis(b)
-    results["g_kurtosis"] = kurtosis(g)
-    results["r_kurtosis"] = kurtosis(r)
-
-    #Plot the histograms below
-    # fig, (ax1,ax2,ax3) = plt.subplots(1,3)
-    # ax1.hist(b, bins=np.arange(256))
-    # ax1.set_ylim(0,1500)
-    # ax2.hist(g, bins=np.arange(256), color='green')
-    # ax2.set_ylim(0,1500)
-    # ax3.hist(r, bins=np.arange(256), color='red')
-    # ax3.set_ylim(0,1500)
-    # plt.show()
-    return results
-
+from Algorithms.transformations import noiseReduce, retinex
+from Algorithms.imageCSVConversion import csvToImage, imageToCSV
+from Algorithms.rgbData import rgbProcDataDevelopment
 
 
 
@@ -120,8 +47,8 @@ def preProcImage(image, folder):
 
 
     # Utilize the RGB Colorspace to analyze the image and pull statistics
-    rgb_proc_f = rgbProcData(f_im, image)
-    rgb_proc_fc = rgbProcData(fc_im,image)
+    rgb_proc_f = rgbProcDataDevelopment(f_im)
+    rgb_proc_fc = rgbProcDataDevelopment(fc_im)
 
     return rgb_proc_f, rgb_proc_fc
 
@@ -184,38 +111,7 @@ def displayResults(results, title):
     plt.show()
 
 
-def noiseReduce(image, folder):
-    f_im = cv2.imread('./'+folder+'/'+image+'A2BA-f.jpg',1)
-    fc_im = cv2.imread('./'+folder+'/'+image+'A2BA-fc.jpg',0)
 
-    im_b = f_im.copy()
-    im_b[:, :, 1] = 0
-    im_b[:, :, 2] = 0
-
-    im_g = f_im.copy()
-    im_g[:, :, 0] = 0
-    im_g[:, :, 2] = 0
-
-    im_r = f_im.copy()
-    im_r[:, :, 0] = 0 # b -> 0
-    im_r[:, :, 1] = 0 # g -> 0
-
-    f_imb = cv2.cvtColor(im_b,cv2.COLOR_BGR2GRAY)
-    f_img = cv2.cvtColor(im_g,cv2.COLOR_BGR2GRAY)
-    f_imr = cv2.cvtColor(im_r,cv2.COLOR_BGR2GRAY)
-
-
-    f_imb = cv2.medianBlur(f_imb,5)
-    f_img = cv2.medianBlur(f_img,5)
-    f_imr = cv2.medianBlur(f_imr,5)
-    edges = cv2.Canny(f_imr,100,200)
-
-    plt.subplot(2,2,1), plt.imshow(edges)
-    plt.subplot(2,2,2), plt.imshow(f_imb)
-    plt.subplot(2,2,3), plt.imshow(f_img)
-    plt.subplot(2,2,4), plt.imshow(f_imr)
-
-    plt.show()
 
 def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
     f = open(filename,'w')
@@ -275,40 +171,27 @@ def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
             )
 
 
-def retinex(patString, folder):
-    f_im = cv2.imread('./'+folder+'/'+patString+'A2BA-f.jpg',-1)
-    # b,g,r = cv2.split(f_im)
-    # f_im = cv2.merge([r,g,b])
-    fc_im = cv2.imread('./'+folder+'/'+patString+'A2BA-fc.jpg',-1)
-    # b,g,r = cv2.split(fc_im)
-    # fc_im = cv2.merge([r,g,b])
-    a = cca.retinex(f_im)
-    b = cca.retinex(fc_im)
-    # plt.subplot(4,1,1), plt.imshow(a)
-    # plt.subplot(4,1,2), plt.imshow(f_im)
-    # plt.subplot(4,1,3), plt.imshow(b)
-    # plt.subplot(4,1,4), plt.imshow(fc_im)
-    # plt.show()
-    cv2.imwrite('./Images_retinex/'+patString+'A2BA-f.jpg',a)
-    cv2.imwrite('./Images_retinex/'+patString+'A2BA-fc.jpg',b)
-    return []
 
-def singleImHist(im):
+def singleImHist(im, display=False, limit=None):
     b,g,r = cv2.split(im)
 
     b = b.flatten()
     g = g.flatten()
     r = r.flatten()
-    # Plot the histograms below
-    # fig, (ax1,ax2,ax3) = plt.subplots(1,3)
-    # fig.suptitle("Single Image Histogram")
-    # ax1.hist(b, bins=np.arange(256),color='blue', ec="blue")
-    # ax1.set_ylim(0,1500)
-    # ax2.hist(g, bins=np.arange(256), color='green', ec="green")
-    # ax2.set_ylim(0,1500)
-    # ax3.hist(r, bins=np.arange(256), color="red",ec="red")
-    # ax3.set_ylim(0,1500)
-    # plt.show()
+    if display:
+        # Plot the histograms below
+        fig, (ax1,ax2,ax3) = plt.subplots(1,3)
+        fig.suptitle("Single Image Histogram")
+        ax1.hist(b, bins=np.arange(256),color='blue', ec="blue")
+        ax2.hist(g, bins=np.arange(256), color='green', ec="green")
+        ax3.hist(r, bins=np.arange(256), color="red",ec="red")
+
+        if limit != None:
+            ax1.set_ylim(0,limit)
+            ax2.set_ylim(0,limit)
+            ax3.set_ylim(0,limit)
+        plt.show()
+
     return b,g,r
 
 def totalImHist(im,b_total,g_total,r_total):
@@ -321,40 +204,26 @@ def totalImHist(im,b_total,g_total,r_total):
     r_total = np.concatenate([r_total,r])
     return b_total, g_total, r_total
 
-def showtotalImHist(b,g,r):
+def showtotalImHist(b,g,r,limit=None):
     # Plot the histograms below
     fig, (ax1,ax2,ax3) = plt.subplots(1,3)
     fig.suptitle("Total Image Histogram")
     ax1.hist(b, bins=np.arange(256),color='blue', ec="blue")
-    # ax1.set_ylim(0,1500)
     ax2.hist(g, bins=np.arange(256), color='green', ec="green")
-    # ax2.set_ylim(0,1500)
     ax3.hist(r, bins=np.arange(256), color="red",ec="red")
-    # ax3.set_ylim(0,1500)
+
+    if limit != None:
+        ax1.set_ylim(0,limit)
+        ax2.set_ylim(0,limit)
+        ax3.set_ylim(0,limit)
+
     plt.show()
 
-def imageToCSV(image,filename):
-    b,g,r = cv2.split(image)
-    filename_b = filename[:-4] + 'b' + filename[-4:]
-    filename_g = filename[:-4] + 'g' + filename[-4:]
-    filename_r = filename[:-4] + 'r' + filename[-4:]
-    np.savetxt(filename_b,b,delimiter=',')
-    np.savetxt(filename_g,g,delimiter=',')
-    np.savetxt(filename_r,r,delimiter=',')
-        
-def csvToImage(patString,cancer):
-    dir_path = "./"
-    if cancer == 'Y':
-        dir_path = './Images_csv/Cancer/'
-    elif cancer == 'N':
-        dir_path = './Images_csv/Non-Cancer/'
-    b = np.loadtxt(open(dir_path + patString+'A2BA-fb.csv',"rb"), delimiter=',')
-    g = np.loadtxt(open(dir_path + patString+'A2BA-fg.csv',"rb"), delimiter=',')
-    r = np.loadtxt(open(dir_path + patString+'A2BA-fr.csv',"rb"), delimiter=',')
-    im = np.dstack([b,g,r])
-    return im
 
-
+def getPatients(patients_path):
+    patlist = open(patients_path, "r").readlines()
+    patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
+    return patlist
 
 def main():
     arg_len = len(sys.argv)
@@ -442,82 +311,83 @@ def main():
             }
         }
 
-        patlist = open("./patientAssignments/patients_cancer.txt", "r").readlines()
-        patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
+        # Get patient id lists to retrieve image files
+        patlist = getPatients("./patientAssignments/patients_cancer.txt")
+        patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
+
         for pat in patlist:
             try:
                 pat_res_f, pat_res_fc = preProcImage(pat, "Images_noBG")
                 cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
             except:
                 print("Error", pat.strip().replace('\r',''))
-        # displayResults(cancer_results, "Cancer")
 
-        patnocancerlist = open("./patientAssignments/patients_nocancer.txt", "r").readlines()
-        patnocancerlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patnocancerlist]
-
-        print(len(patnocancerlist))
         for pat in patnocancerlist:
             try:
                 pat_res_f,pat_res_fc = preProcImage(pat, "Images_noBG")
                 no_cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, no_cancer_results)
             except:
                 print("Error")
-        # displayResults(no_cancer_results, "No Cancer")
+
+        displayResults(cancer_results, "Cancer")
+        displayResults(no_cancer_results, "No Cancer")
         # writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv4.csv')
 
+    # Retinex optional parameters
+    # retinex(patient id, folder reading from, setTransform=False, writeToFolder=None)
+    # setTransform=True : display plot of the change in the image after transformation
+    # writeToFolder='C:/some/path' : if provided a path, it will write images to a desired folder
     elif arg_len == 2 and sys.argv[1] == "retinex":
-        patlist = open("./patientAssignments/patients_cancer.txt", "r").readlines()
-        patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
+        # Get patient id lists to retrieve image files
+        patlist = getPatients("./patientAssignments/patients_cancer.txt")
+        patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
+
         for pat in patlist:
             retinex(pat, "Images_noBG")
 
-        patnocancerlist = open("./patientAssignments/patients_nocancer.txt", "r").readlines()
-        patnocancerlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patnocancerlist]
-
         for pat in patnocancerlist:
             retinex(pat, "Images_noBG")
+
 
     elif arg_len == 2 and sys.argv[1] == "noiseReduce":
         print(noiseReduce("EscMar261010","Images_noBG"))
 
     elif arg_len == 2 and sys.argv[1] == "singleImageHist":
-        patlist = open("./patientAssignments/patients_cancer.txt", "r").readlines()
-        patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
-        patlist = [patlist[0]]
-        for pat in patlist:
-            print('./Images_noBG/'+pat+'A2BA-f.jpg')
-            f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
-            fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
-            singleImHist(f_im)
-            singleImHist(fc_im)
 
-        patnocancerlist = open("./patientAssignments/patients_nocancer.txt", "r").readlines()
-        patnocancerlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patnocancerlist]
+        # Get first patient id from each set to display results if desired
+        patlist = getPatients("./patientAssignments/patients_cancer.txt")
+        patlist = [patlist[0]]
+        patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
         patnocancerlist = [patnocancerlist[0]]
 
-        for pat in patnocancerlist:
-            f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
-            fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
-            singleImHist(f_im)
-            singleImHist(fc_im)
+        # Optional paramters for singleImHist:
+        # display=True to the singleImHist function to display histogram
+        # limit=1000, sets the y_limit to the histogram
+        for p_id in patlist:
+            f_im = cv2.imread('./Images_noBG/'+p_id+'A2BA-f.jpg',1)
+            fc_im = cv2.imread('./Images_noBG/'+p_id+'A2BA-fc.jpg',1)
+            singleImHist(f_im, display=True,limit=1000)
+            singleImHist(fc_im, display=True,limit=1000)
+
+
+        for p_id in patnocancerlist:
+            f_im = cv2.imread('./Images_noBG/'+p_id+'A2BA-f.jpg',1)
+            fc_im = cv2.imread('./Images_noBG/'+p_id+'A2BA-fc.jpg',1)
+            singleImHist(f_im, display=True,limit=1000)
+            singleImHist(fc_im, display=True,limit=1000)
 
     elif arg_len == 2 and sys.argv[1] == "totalImageHist":
-        patlist = open("./patientAssignments/patients_cancer.txt", "r").readlines()
-        patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
-        patlist = [patlist[0]]
+        patlist = getPatients("./patientAssignments/patients_cancer.txt")
         r_t, g_t, b_t = np.array([]), np.array([]), np.array([])
 
         for pat in patlist:
-            print('./Images_noBG/'+pat+'A2BA-f.jpg')
             f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
             fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
             r_t, g_t, b_t = totalImHist(f_im,b_t,g_t,r_t)
             r_t, g_t, b_t = totalImHist(fc_im,b_t,g_t,r_t)
 
         showtotalImHist(b_t,g_t,r_t)
-        patnocancerlist = open("./patientAssignments/patients_nocancer.txt", "r").readlines()
-        patnocancerlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patnocancerlist]
-        patnocancerlist = [patnocancerlist[0]]
+        patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
         r_t, g_t, b_t = np.array([]), np.array([]), np.array([])
 
         for pat in patnocancerlist:
@@ -526,25 +396,25 @@ def main():
             r_t, g_t, b_t = totalImHist(f_im,b_t,g_t,r_t)
             r_t, g_t, b_t = totalImHist(fc_im,b_t,g_t,r_t)
         showtotalImHist(b_t,g_t,r_t)
+
     elif arg_len == 2 and sys.argv[1] == "imageToCsv":
-        patlist = open("./patientAssignments/patients_cancer.txt", "r").readlines()
-        patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
+        patlist = getPatients("./patientAssignments/patients_cancer.txt")
+        patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
+
         for pat in patlist:
-            print(pat+'A2BA-f.csv')
             f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
             fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
             imageToCSV(f_im, './Images_csv/Cancer/'+pat+'A2BA-f.csv')
             imageToCSV(fc_im,'./Images_csv/Cancer/'+pat+'A2BA-fc.csv')
-
-        patnocancerlist = open("./patientAssignments/patients_nocancer.txt", "r").readlines()
-        patnocancerlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patnocancerlist]
 
         for pat in patnocancerlist:
             f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
             fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
             imageToCSV(f_im, './Images_csv/Non-Cancer/'+pat+'A2BA-f.csv')
             imageToCSV(fc_im, './Images_csv/Non-Cancer/'+pat+'A2BA-fc.csv')
+
     elif arg_len == 2 and sys.argv[1] == "csvToImage":
-        csvToImage('AcoAlm221112','N')
+        csvToImage('AcoAlm221112','./Images_csv/Non-Cancer/')
+
 if __name__ == '__main__':
     main()
