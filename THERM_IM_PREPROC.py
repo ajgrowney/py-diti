@@ -1,7 +1,6 @@
 import sys
 import statistics
 import json
-import csv
 import numpy as np
 import pandas as pd
 import cv2
@@ -14,8 +13,8 @@ from sklearn.decomposition import FastICA, PCA
 from Algorithms.transformations import noiseReduce, retinex
 from Algorithms.imageCSVConversion import csvToImage, imageToCSV
 from Algorithms.rgbData import rgbProcDataDevelopment
-
-
+from Utilities.histogramHelper import compileHistogramResults, displayResults
+from Utilities.resultsDevObj import resultsObj, writeResultsToCsv
 
 # Description:
 # @Param im {CV2 image object/ np.ndarray } - image object converted to grayscale for analysis
@@ -52,178 +51,15 @@ def preProcImage(image, folder):
 
     return rgb_proc_f, rgb_proc_fc
 
-def compileHistogramResults(single_im_f, single_im_fc, current_results):
-    current_results["skews"]["r_fc"].append(single_im_fc['r_skew'])
-    current_results["skews"]["r_f"].append(single_im_f['r_skew'])
-    current_results["skews"]["b_fc"].append(single_im_fc['b_skew'])
-    current_results["skews"]["b_f"].append(single_im_f['b_skew'])
-    current_results["skews"]["g_fc"].append(single_im_fc['g_skew'])
-    current_results["skews"]["g_f"].append(single_im_f['g_skew'])
-    current_results["kurtosis"]["r_fc"].append(single_im_fc['r_kurtosis'])
-    current_results["kurtosis"]["r_f"].append(single_im_f['r_kurtosis'])
-    current_results["kurtosis"]["b_fc"].append(single_im_fc['b_kurtosis'])
-    current_results["kurtosis"]["b_f"].append(single_im_f['b_kurtosis'])
-    current_results["kurtosis"]["g_fc"].append(single_im_fc['g_kurtosis'])
-    current_results["kurtosis"]["g_f"].append(single_im_f['g_kurtosis'])
-    current_results["means"]["total_f"]["b"].append(single_im_f['image_mean'][0])
-    current_results["means"]["total_f"]["g"].append(single_im_f['image_mean'][1])
-    current_results["means"]["total_f"]["r"].append(single_im_f['image_mean'][2])
-    current_results["means"]["total_fc"]["b"].append(single_im_fc['image_mean'][0])
-    current_results["means"]["total_fc"]["g"].append(single_im_fc['image_mean'][1])
-    current_results["means"]["total_fc"]["r"].append(single_im_fc['image_mean'][2])
-    return current_results
-
-def displayResults(results, title):
-    fig = plt.figure()
-    ax = fig.add_subplot(2,2,1)
-    ax.set_title(title + " Skew Data")
-    skew_data = [results["skews"]["r_f"], results["skews"]["r_fc"], results["skews"]["g_f"], results["skews"]["g_fc"], results["skews"]["b_f"], results["skews"]["b_fc"]]
-    colors = ['red', 'crimson','green', 'yellow','blue', 'skyblue']
-    n, bins, patches = plt.hist(skew_data, 10, color=colors)
-
-    ax = fig.add_subplot(2,2,2)
-    ax.set_title(title + " Kurtosis Data")
-    kurt_data = [results["kurtosis"]["r_f"], results["kurtosis"]["r_fc"], results["kurtosis"]["g_f"], results["kurtosis"]["g_fc"], results["kurtosis"]["b_f"], results["kurtosis"]["b_fc"]]
-    colors = ['red', 'crimson','green', 'yellow','blue', 'skyblue']
-    n, bins, patches = plt.hist(kurt_data, 10, color=colors)
-
-    ax = fig.add_subplot(2,2,3, projection='3d')
-    ax.set_title("Image Means - F")
-    xf_vals = results["means"]['total_f']["r"]
-    yf_vals = results["means"]['total_f']["g"]
-    zf_vals = results["means"]['total_f']["b"]
-
-    ax.scatter(xf_vals, yf_vals, zf_vals)
-    ax.set_xlabel('R Values')
-    ax.set_ylabel('G Values')
-    ax.set_zlabel('B Values')
-
-    ax = fig.add_subplot(2,2,4, projection='3d')
-    ax.set_title("Image Means - FC")
-    xfc_vals = results["means"]['total_fc']["r"]
-    yfc_vals = results["means"]['total_fc']["g"]
-    zfc_vals = results["means"]['total_fc']["b"]
-
-    ax.scatter(xfc_vals, yfc_vals, zfc_vals)
-    ax.set_xlabel('R Values')
-    ax.set_ylabel('G Values')
-    ax.set_zlabel('B Values')
-    plt.show()
 
 
-
-
-def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
-    f = open(filename,'w')
-
-    with f:
-        fieldnames = ['skews_r_f','skews_r_fc','skews_g_f','skews_g_fc', 'skews_b_f','skews_b_fc','kurtosis_r_f','kurtosis_r_fc','kurtosis_g_f','kurtosis_g_fc', 'kurtosis_b_f','kurtosis_b_fc', 'mean_total_f_r', 'mean_total_f_g', 'mean_total_f_b', 'mean_total_fc_r', 'mean_total_fc_g', 'mean_total_fc_b', 'cancer']
-        writer = csv.DictWriter(f,fieldnames=fieldnames)
-        writer.writeheader()
-        for i in range(len(cancer_obj["means"]["total_f"]["r"])):
-            writer.writerow(
-                {
-                    'skews_r_f': cancer_obj["skews"]["r_f"][i],
-                    'skews_r_fc': cancer_obj["skews"]["r_fc"][i],
-                    'skews_g_f': cancer_obj["skews"]["g_f"][i],
-                    'skews_g_fc': cancer_obj["skews"]["g_fc"][i],
-                    'skews_b_f': cancer_obj["skews"]["b_f"][i],
-                    'skews_b_fc': cancer_obj["skews"]["b_fc"][i],
-                    'kurtosis_r_f': cancer_obj["kurtosis"]["r_f"][i],
-                    'kurtosis_r_fc': cancer_obj["kurtosis"]["r_fc"][i],
-                    'kurtosis_g_f': cancer_obj["kurtosis"]["g_f"][i],
-                    'kurtosis_g_fc': cancer_obj["kurtosis"]["g_fc"][i],
-                    'kurtosis_b_f': cancer_obj["kurtosis"]["b_f"][i],
-                    'kurtosis_b_fc': cancer_obj["kurtosis"]["b_fc"][i],
-                    'mean_total_f_r': cancer_obj["means"]["total_f"]["r"][i],
-                    'mean_total_fc_r': cancer_obj["means"]["total_fc"]["r"][i],
-                    'mean_total_f_g': cancer_obj["means"]["total_f"]["g"][i],
-                    'mean_total_fc_g': cancer_obj["means"]["total_fc"]["g"][i],
-                    'mean_total_f_b': cancer_obj["means"]["total_f"]["b"][i],
-                    'mean_total_fc_b': cancer_obj["means"]["total_fc"]["b"][i],
-                    'cancer': 'Y'
-                }
-            )
-
-        for j in range(len(nocancer_obj["means"]["total_f"]["r"])):
-            writer.writerow(
-                {
-                    'skews_r_f': nocancer_obj["skews"]["r_f"][j],
-                    'skews_r_fc': nocancer_obj["skews"]["r_fc"][j],
-                    'skews_g_f': nocancer_obj["skews"]["g_f"][j],
-                    'skews_g_fc': nocancer_obj["skews"]["g_fc"][j],
-                    'skews_b_f': nocancer_obj["skews"]["b_f"][j],
-                    'skews_b_fc': nocancer_obj["skews"]["b_fc"][j],
-                    'kurtosis_r_f': nocancer_obj["kurtosis"]["r_f"][j],
-                    'kurtosis_r_fc': nocancer_obj["kurtosis"]["r_fc"][j],
-                    'kurtosis_g_f': nocancer_obj["kurtosis"]["g_f"][j],
-                    'kurtosis_g_fc': nocancer_obj["kurtosis"]["g_fc"][j],
-                    'kurtosis_b_f': nocancer_obj["kurtosis"]["b_f"][j],
-                    'kurtosis_b_fc': nocancer_obj["kurtosis"]["b_fc"][j],
-                    'mean_total_f_r': nocancer_obj["means"]["total_f"]["r"][j],
-                    'mean_total_fc_r': nocancer_obj["means"]["total_fc"]["r"][j],
-                    'mean_total_f_g': nocancer_obj["means"]["total_f"]["g"][j],
-                    'mean_total_fc_g': nocancer_obj["means"]["total_fc"]["g"][j],
-                    'mean_total_f_b': nocancer_obj["means"]["total_f"]["b"][j],
-                    'mean_total_fc_b': nocancer_obj["means"]["total_fc"]["b"][j],
-                    'cancer': 'N'
-                }
-            )
-
-
-
-def singleImHist(im, display=False, limit=None):
-    b,g,r = cv2.split(im)
-
-    b = b.flatten()
-    g = g.flatten()
-    r = r.flatten()
-    if display:
-        # Plot the histograms below
-        fig, (ax1,ax2,ax3) = plt.subplots(1,3)
-        fig.suptitle("Single Image Histogram")
-        ax1.hist(b, bins=np.arange(256),color='blue', ec="blue")
-        ax2.hist(g, bins=np.arange(256), color='green', ec="green")
-        ax3.hist(r, bins=np.arange(256), color="red",ec="red")
-
-        if limit != None:
-            ax1.set_ylim(0,limit)
-            ax2.set_ylim(0,limit)
-            ax3.set_ylim(0,limit)
-        plt.show()
-
-    return b,g,r
-
-def totalImHist(im,b_total,g_total,r_total):
-    b,g,r = cv2.split(im)
-    b = b.flatten()
-    g = g.flatten()
-    r = r.flatten()
-    b_total = np.concatenate([b_total,b])
-    g_total = np.concatenate([g_total,g])
-    r_total = np.concatenate([r_total,r])
-    return b_total, g_total, r_total
-
-def showtotalImHist(b,g,r,limit=None):
-    # Plot the histograms below
-    fig, (ax1,ax2,ax3) = plt.subplots(1,3)
-    fig.suptitle("Total Image Histogram")
-    ax1.hist(b, bins=np.arange(256),color='blue', ec="blue")
-    ax2.hist(g, bins=np.arange(256), color='green', ec="green")
-    ax3.hist(r, bins=np.arange(256), color="red",ec="red")
-
-    if limit != None:
-        ax1.set_ylim(0,limit)
-        ax2.set_ylim(0,limit)
-        ax3.set_ylim(0,limit)
-
-    plt.show()
 
 
 def getPatients(patients_path):
     patlist = open(patients_path, "r").readlines()
     patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
     return patlist
+
 
 def main():
     arg_len = len(sys.argv)
@@ -328,9 +164,9 @@ def main():
                 no_cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, no_cancer_results)
             except:
                 print("Error")
-
-        displayResults(cancer_results, "Cancer")
-        displayResults(no_cancer_results, "No Cancer")
+        print(cancer_results)
+        #displayResults(cancer_results, "Cancer")
+        #displayResults(no_cancer_results, "No Cancer")
         # writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv4.csv')
 
     # Retinex optional parameters
