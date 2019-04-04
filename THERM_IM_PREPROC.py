@@ -13,7 +13,6 @@ from sklearn.decomposition import FastICA, PCA
 from Algorithms.transformations import noiseReduce, retinex
 from Algorithms.imageCSVConversion import csvToImage, imageToCSV
 from Algorithms.rgbData import rgbProcDataDevelopment
-from Utilities.histogramHelper import compileHistogramResults, displayResults
 from Utilities.resultsDevObj import resultsObj, writeResultsToCsv
 
 # Description:
@@ -66,86 +65,9 @@ def main():
 
     if arg_len == 2 and sys.argv[1] == "frontDataAll":
         # Results Object
-        cancer_results = {
-            "skews": {
-                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-            },
-            "kurtosis": {
-                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-            },
-            "means": {
-                "total_f": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                },
-                "total_fc": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                },
-                "left_f": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                },
-                "left_fc": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                },
-                "right_f": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                },
-                "right_fc": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                }
-            }
-        }
-        no_cancer_results = {
-            "skews": {
-                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-            },
-            "kurtosis": {
-                "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-            },
-            "means": {
-                "total_f": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                },
-                "total_fc": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                },
-                "left_f": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                },
-                "left_fc": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                },
-                "right_f": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                },
-                "right_fc": {
-                    "r": [],
-                    "g": [],
-                    "b": []
-                }
-            }
-        }
+        cancer_results = resultsObj()
+
+        no_cancer_results = resultsObj()
 
         # Get patient id lists to retrieve image files
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
@@ -154,20 +76,19 @@ def main():
         for pat in patlist:
             try:
                 pat_res_f, pat_res_fc = preProcImage(pat, "Images_noBG")
-                cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, cancer_results)
-            except:
-                print("Error", pat.strip().replace('\r',''))
+                cancer_results.compileHistogramResults(pat_res_f, pat_res_fc)
+            except Exception as e:
+                print("Error", e)
 
         for pat in patnocancerlist:
             try:
                 pat_res_f,pat_res_fc = preProcImage(pat, "Images_noBG")
-                no_cancer_results = compileHistogramResults(pat_res_f, pat_res_fc, no_cancer_results)
-            except:
-                print("Error")
-        print(cancer_results)
-        #displayResults(cancer_results, "Cancer")
-        #displayResults(no_cancer_results, "No Cancer")
-        # writeResultsToCsv(cancer_results, no_cancer_results, 'cancer_res_csv4.csv')
+                no_cancer_results.compileHistogramResults(pat_res_f, pat_res_fc)
+            except Exception as e:
+                print("Error",e.message)
+
+        #cancer_results.displayResults("Cancer")
+        #no_cancer_results.displayResults("No Cancer")
 
     # Retinex optional parameters
     # retinex(patient id, folder reading from, setTransform=False, writeToFolder=None)

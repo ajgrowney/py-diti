@@ -1,45 +1,76 @@
 import csv
-
+import matplotlib.pyplot as plt
 class resultsObj:
     def __init__(self):
-        self["skews"]= {
-            "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-        },
-        self["kurtosis"]= {
-            "r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []
-        },
-        self["means"]= {
-            "total_f": {
-                "r": [],
-                "g": [],
-                "b": []
-            },
-            "total_fc": {
-                "r": [],
-                "g": [],
-                "b": []
-            },
-            "left_f": {
-                "r": [],
-                "g": [],
-                "b": []
-            },
-            "left_fc": {
-                "r": [],
-                "g": [],
-                "b": []
-            },
-            "right_f": {
-                "r": [],
-                "g": [],
-                "b": []
-            },
-            "right_fc": {
-                "r": [],
-                "g": [],
-                "b": []
-            }
-         }
+        setattr(self,"skews",{"r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []}),
+        setattr(self,"kurtosis",{"r_f": [], "r_fc": [], "g_f": [], "g_fc": [], "b_f": [], "b_fc": []}),
+        setattr(self,"means",
+            {"total_f": {"r": [],"g": [],"b": []},
+            "total_fc": {"r": [],"g": [],"b": []},
+            "left_f": {"r": [],"g": [],"b": []},
+            "left_fc": {"r": [],"g": [],"b": []},
+            "right_f": {"r": [],"g": [],"b": []},
+            "right_fc": {"r": [],"g": [],"b": []}
+            })
+
+    def compileHistogramResults(self,single_im_f, single_im_fc):
+        self.skews["r_fc"].append(single_im_fc['r_skew'])
+        self.skews["r_f"].append(single_im_f['r_skew'])
+        self.skews["b_fc"].append(single_im_fc['b_skew'])
+        self.skews["b_f"].append(single_im_f['b_skew'])
+        self.skews["g_fc"].append(single_im_fc['g_skew'])
+        self.skews["g_f"].append(single_im_f['g_skew'])
+        self.kurtosis["r_fc"].append(single_im_fc['r_kurtosis'])
+        self.kurtosis["r_f"].append(single_im_f['r_kurtosis'])
+        self.kurtosis["b_fc"].append(single_im_fc['b_kurtosis'])
+        self.kurtosis["b_f"].append(single_im_f['b_kurtosis'])
+        self.kurtosis["g_fc"].append(single_im_fc['g_kurtosis'])
+        self.kurtosis["g_f"].append(single_im_f['g_kurtosis'])
+        self.means["total_f"]["b"].append(single_im_f['image_mean'][0])
+        self.means["total_f"]["g"].append(single_im_f['image_mean'][1])
+        self.means["total_f"]["r"].append(single_im_f['image_mean'][2])
+        self.means["total_fc"]["b"].append(single_im_fc['image_mean'][0])
+        self.means["total_fc"]["g"].append(single_im_fc['image_mean'][1])
+        self.means["total_fc"]["r"].append(single_im_fc['image_mean'][2])
+
+
+    def displayResults(self, title):
+        fig = plt.figure()
+        ax = fig.add_subplot(2,2,1)
+        ax.set_title(title + " Skew Data")
+        skew_data = [self.skews["r_f"], self.skews["r_fc"], self.skews["g_f"], self.skews["g_fc"], self.skews["b_f"], self.skews["b_fc"]]
+        colors = ['red', 'crimson','green', 'yellow','blue', 'skyblue']
+        n, bins, patches = plt.hist(skew_data, 10, color=colors)
+
+        ax = fig.add_subplot(2,2,2)
+        ax.set_title(title + " Kurtosis Data")
+        kurt_data = [self.kurtosis["r_f"], self.kurtosis["r_fc"], self.kurtosis["g_f"], self.kurtosis["g_fc"], self.kurtosis["b_f"], self.kurtosis["b_fc"]]
+        colors = ['red', 'crimson','green', 'yellow','blue', 'skyblue']
+        n, bins, patches = plt.hist(kurt_data, 10, color=colors)
+
+        ax = fig.add_subplot(2,2,3, projection='3d')
+        ax.set_title("Image Means - F")
+        xf_vals = self.means['total_f']["r"]
+        yf_vals = self.means['total_f']["g"]
+        zf_vals = self.means['total_f']["b"]
+
+        ax.scatter(xf_vals, yf_vals, zf_vals)
+        ax.set_xlabel('R Values')
+        ax.set_ylabel('G Values')
+        ax.set_zlabel('B Values')
+
+        ax = fig.add_subplot(2,2,4, projection='3d')
+        ax.set_title("Image Means - FC")
+        xfc_vals = self.means['total_fc']["r"]
+        yfc_vals = self.means['total_fc']["g"]
+        zfc_vals = self.means['total_fc']["b"]
+
+        ax.scatter(xfc_vals, yfc_vals, zfc_vals)
+        ax.set_xlabel('R Values')
+        ax.set_ylabel('G Values')
+        ax.set_zlabel('B Values')
+        plt.show()
+
 
 
 def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
