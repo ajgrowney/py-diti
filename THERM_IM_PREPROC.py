@@ -13,6 +13,7 @@ from sklearn.decomposition import FastICA, PCA
 from Algorithms.transformations import noiseReduce, retinex
 from Algorithms.imageCSVConversion import csvToImage, imageToCSV
 from Algorithms.rgbData import rgbProcDataDevelopment
+from Utilities.histogramHelper import singleImHist, totalImHist, showtotalImHist
 from Utilities.resultsDevObj import resultsObj, writeResultsToCsv
 
 # Description:
@@ -63,7 +64,7 @@ def getPatients(patients_path):
 def main():
     arg_len = len(sys.argv)
 
-    if arg_len == 2 and sys.argv[1] == "frontDataAll":
+    if sys.argv[1] == "frontDataAll":
         # Results Object
         cancer_results = resultsObj()
 
@@ -94,7 +95,7 @@ def main():
     # retinex(patient id, folder reading from, setTransform=False, writeToFolder=None)
     # setTransform=True : display plot of the change in the image after transformation
     # writeToFolder='C:/some/path' : if provided a path, it will write images to a desired folder
-    elif arg_len == 2 and sys.argv[1] == "retinex":
+    elif sys.argv[1] == "retinex":
         # Get patient id lists to retrieve image files
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
         patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
@@ -106,10 +107,10 @@ def main():
             retinex(pat, "Images_noBG")
 
 
-    elif arg_len == 2 and sys.argv[1] == "noiseReduce":
+    elif sys.argv[1] == "noiseReduce":
         print(noiseReduce("EscMar261010","Images_noBG"))
 
-    elif arg_len == 2 and sys.argv[1] == "singleImageHist":
+    elif sys.argv[1] == "singleImageHist":
 
         # Get first patient id from each set to display results if desired
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
@@ -133,7 +134,7 @@ def main():
             singleImHist(f_im, display=True,limit=1000)
             singleImHist(fc_im, display=True,limit=1000)
 
-    elif arg_len == 2 and sys.argv[1] == "totalImageHist":
+    elif sys.argv[1] == "totalImageHist":
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
         r_t, g_t, b_t = np.array([]), np.array([]), np.array([])
 
@@ -154,24 +155,26 @@ def main():
             r_t, g_t, b_t = totalImHist(fc_im,b_t,g_t,r_t)
         showtotalImHist(b_t,g_t,r_t)
 
-    elif arg_len == 2 and sys.argv[1] == "imageToCsv":
+    elif sys.argv[1] == "imageToCsv":
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
         patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
 
-        for pat in patlist:
+        for pat in [patlist[0]]:
             f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
             fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
             imageToCSV(f_im, './Images_csv/Cancer/'+pat+'A2BA-f.csv')
             imageToCSV(fc_im,'./Images_csv/Cancer/'+pat+'A2BA-fc.csv')
 
-        for pat in patnocancerlist:
+        for pat in [patnocancerlist[0]]:
             f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
             fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
             imageToCSV(f_im, './Images_csv/Non-Cancer/'+pat+'A2BA-f.csv')
             imageToCSV(fc_im, './Images_csv/Non-Cancer/'+pat+'A2BA-fc.csv')
 
-    elif arg_len == 2 and sys.argv[1] == "csvToImage":
-        csvToImage('AcoAlm221112','./Images_csv/Non-Cancer/')
+    elif sys.argv[1] == "csvToImage":
+        pat_id = sys.argv[2] if len(sys.argv) > 2 else 'AcoAlm221112'
+        pat_path = sys.argv[3] if len(sys.argv) > 3 else './Images_csv/Non-Cancer/'
+        csvToImage(pat_id,pat_path)
 
 if __name__ == '__main__':
     main()
