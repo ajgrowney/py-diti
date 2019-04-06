@@ -136,24 +136,23 @@ def main():
 
     elif sys.argv[1] == "totalImageHist":
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
-        r_t, g_t, b_t = np.array([]), np.array([]), np.array([])
+        b_t, g_t, r_t = totalImHist(patlist)
+        #for pat in patlist:
+        #    f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
+        #    fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
+        #    r_t, g_t, b_t = totalImHist(f_im,b_t,g_t,r_t)
+        #    r_t, g_t, b_t = totalImHist(fc_im,b_t,g_t,r_t)
 
-        for pat in patlist:
-            f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
-            fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
-            r_t, g_t, b_t = totalImHist(f_im,b_t,g_t,r_t)
-            r_t, g_t, b_t = totalImHist(fc_im,b_t,g_t,r_t)
-
-        showtotalImHist(b_t,g_t,r_t)
+        showtotalImHist(b_t,g_t,r_t,display=False)
         patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
-        r_t, g_t, b_t = np.array([]), np.array([]), np.array([])
+        b_t, g_t, r_t = totalImHist(patnocancerlist) 
 
-        for pat in patnocancerlist:
-            f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
-            fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
-            r_t, g_t, b_t = totalImHist(f_im,b_t,g_t,r_t)
-            r_t, g_t, b_t = totalImHist(fc_im,b_t,g_t,r_t)
-        showtotalImHist(b_t,g_t,r_t)
+       # for pat in patnocancerlist:
+       #     f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
+       #     fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
+       #     r_t, g_t, b_t = totalImHist(f_im,b_t,g_t,r_t)
+       #     r_t, g_t, b_t = totalImHist(fc_im,b_t,g_t,r_t)
+       # showtotalImHist(b_t,g_t,r_t,display=False)
 
     elif sys.argv[1] == "imageToCsv":
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
