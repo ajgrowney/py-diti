@@ -13,7 +13,7 @@ from sklearn.decomposition import FastICA, PCA
 from Algorithms.transformations import noiseReduce, retinex
 from Algorithms.imageCSVConversion import csvToImage, imageToCSV
 from Algorithms.rgbData import rgbProcDataDevelopment
-from Utilities.histogramHelper import singleImHist, totalImHist, showtotalImHist
+from Utilities.histogramHelper import singleImHist, totalImHist, compareTransformHist
 from Utilities.resultsDevObj import resultsObj, writeResultsToCsv
 
 # Description:
@@ -35,7 +35,6 @@ def grayProcData(im):
 # Description:
 # @Param: image{'*.jpg','*.png'} - image to be analyzed and processed into classifier data
 # @Param: new_file_name {String} -
-
 def preProcImage(image, folder):
     f_im = cv2.imread('./'+folder+'/'+image+'A2BA-f.jpg',1)
     b,g,r = cv2.split(f_im)
@@ -52,9 +51,6 @@ def preProcImage(image, folder):
     return rgb_proc_f, rgb_proc_fc
 
 
-
-
-
 def getPatients(patients_path):
     patlist = open(patients_path, "r").readlines()
     patlist = [pat.strip().decode('utf-8-sig').encode('utf-8').replace('\r','') for pat in patlist]
@@ -67,7 +63,6 @@ def main():
     if sys.argv[1] == "frontDataAll":
         # Results Object
         cancer_results = resultsObj()
-
         no_cancer_results = resultsObj()
 
         # Get patient id lists to retrieve image files
@@ -91,8 +86,13 @@ def main():
         #cancer_results.displayResults("Cancer")
         #no_cancer_results.displayResults("No Cancer")
 
+    elif sys.argv[1] == "compareTransform":
+        im0 = cv2.imread('./Images_noBG/AguCat100309A2BA-f.jpg')
+        imt = cv2.imread('./Images_retinex/AguCat100309A2BA-f.jpg)
+        compareTransformHist(im0,imt,'L')
+
     # Retinex optional parameters
-    # retinex(patient id, folder reading from, setTransform=False, writeToFolder=None)
+    # retinex(patient_id, images_folder, setTransform=False, writeToFolder=None)
     # setTransform=True : display plot of the change in the image after transformation
     # writeToFolder='C:/some/path' : if provided a path, it will write images to a desired folder
     elif sys.argv[1] == "retinex":
@@ -100,11 +100,11 @@ def main():
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
         patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
 
-        for pat in patlist:
-            retinex(pat, "Images_noBG")
-
-        for pat in patnocancerlist:
-            retinex(pat, "Images_noBG")
+        for pat in [patlist[0]]:
+            retinex(pat, "Images_noBG", writeToFolder='./Images_retinex/')
+        #
+        # for pat in patnocancerlist:
+        #     retinex(pat, "Images_noBG")
 
 
     elif sys.argv[1] == "noiseReduce":
@@ -112,10 +112,11 @@ def main():
 
     elif sys.argv[1] == "singleImageHist":
 
-        # Get first patient id from each set to display results if desired
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
-        patlist = [patlist[0]]
         patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
+
+        # Get first patient id from each set to display results if desired
+        patlist = [patlist[0]]
         patnocancerlist = [patnocancerlist[0]]
 
         # Optional paramters for singleImHist:
@@ -138,23 +139,20 @@ def main():
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
         patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
 
-        b_t, g_t, r_t = totalImHist(patlist)
-        showtotalImHist(b_t,g_t,r_t,display=True)
-
-        b_t, g_t, r_t = totalImHist(patnocancerlist)
-        showtotalImHist(b_t,g_t,r_t,display=True)
+        totalImHist(patlist, display=True)
+        totalImHist(patnocancerlist, display=True)
 
     elif sys.argv[1] == "imageToCsv":
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
         patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
 
-        for pat in [patlist[0]]:
+        for pat in patlist:
             f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
             fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
             imageToCSV(f_im, './Images_csv/Cancer/'+pat+'A2BA-f.csv')
             imageToCSV(fc_im,'./Images_csv/Cancer/'+pat+'A2BA-fc.csv')
 
-        for pat in [patnocancerlist[0]]:
+        for pat in patnocancerlist:
             f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
             fc_im = cv2.imread('./Images_noBG/'+pat+'A2BA-fc.jpg',1)
             imageToCSV(f_im, './Images_csv/Non-Cancer/'+pat+'A2BA-f.csv')
