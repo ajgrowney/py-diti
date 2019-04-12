@@ -55,8 +55,60 @@ def totalImHist(patient_list, display=True, limit=None):
 
 # Param: image { numpy.ndarray } - image read by cv2.imread
 # Param: transformed { numpy.ndarray } - image read by cv2.imread
-# Param: side_of_cancer { string } - 'L', 'R', or 'N'
-def compareTransformHist(image, transformed, side_of_cancer):
-    b0,g0,r0 = cv2.split(image)
-    bt,gt,rt = cv2.split(transformed)
+# Param: side_of_tumor { string } - 'L', 'R', or 'N'
+def compareTransformHist(image, transformed, side_of_tumor,display=True,limit=500,pat_id=None):
+    _, im_width, _ = image.shape
+    _, transform_width, _ = transformed.shape
+
+    if side_of_tumor == 'L':
+        # Set tumor to left side
+        tumorImage = image[:,0:(im_width/2)]
+        nonTumorImage = image[:,(im_width/2):im_width]
+        tumorTransformed = transformed[:,0:(transform_width/2)]
+        nonTumorTransformed = transformed[:,(transform_width/2):transform_width]
+    else:
+        # Set tumor to right side
+        tumorImage = image[:,(im_width/2):im_width]
+        nonTumorImage = image[:,0:(im_width/2)]
+        tumorTransformed = transformed[:,(transform_width/2):transform_width]
+        nonTumorTransformed = transformed[:,0:(transform_width/2)]
+    b_tumor_im, g_tumor_im, r_tumor_im = cv2.split(tumorImage)
+    b_non_tumor_im, g_non_tumor_im, r_non_tumor_im = cv2.split(nonTumorImage)
+    b_tumor_transform, g_tumor_transform, r_tumor_transform = cv2.split(tumorTransformed)
+    b_non_tumor_transform, g_non_tumor_transform, r_non_tumor_transform = cv2.split(nonTumorTransformed)
+    
+    b_tumor_im, g_tumor_im, r_tumor_im = b_tumor_im.flatten(), g_tumor_im.flatten(), r_tumor_im.flatten()
+    b_non_tumor_im, g_non_tumor_im, r_non_tumor_im = b_non_tumor_im.flatten(), g_non_tumor_im.flatten(), r_non_tumor_im.flatten()
+    b_tumor_transform, g_tumor_transform, r_tumor_transform = b_tumor_transform.flatten(), g_tumor_transform.flatten(), r_tumor_transform.flatten()
+    b_non_tumor_transform, g_non_tumor_transform, r_non_tumor_transform = b_non_tumor_transform.flatten(), g_non_tumor_transform.flatten(), r_non_tumor_transform.flatten()
+
+    if display == True:
+        fig, axs = plt.subplots(2,3)
+        if pat_id != None:
+            fig.suptitle(pat_id)
+        
+        (ax1,ax2,ax3,ax4,ax5,ax6) = axs.flatten()
+        
+        ax1.set_title('Image- Blue')
+        ax1.hist([b_tumor_im,b_non_tumor_im],bins=np.arange(256),color=['blue','black'])
+        ax2.set_title('Image- Green')
+        ax2.hist([g_tumor_im,g_non_tumor_im],bins=np.arange(256),color=['green','black'])
+        ax3.set_title('Image- Red')
+        ax3.hist([r_tumor_im,r_non_tumor_im],bins=np.arange(256),color=['red','black'])
+        ax4.set_title('Transform- Blue')
+        ax4.hist([b_tumor_transform,b_non_tumor_transform],bins=np.arange(256),color=['blue','black'])
+        ax5.set_title('Transform- Green')
+        ax5.hist([g_tumor_transform,g_non_tumor_transform],bins=np.arange(256),color=['green','black'])
+        ax6.set_title('Transform- Red')
+        ax6.hist([r_tumor_transform,r_non_tumor_transform],bins=np.arange(256),color=['red','black'])
+        
+        if limit != None:
+            [x.set_ylim(0,limit) for x in [ax1,ax2,ax3,ax4,ax5,ax6]]
+
+        
+        plt.show()
+
+
+
+
     return []
