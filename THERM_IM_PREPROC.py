@@ -83,6 +83,7 @@ def main():
             except Exception as e:
                 print("Error",e.message)
 
+        writeResultsToCsv(cancer_results,no_cancer_results,'./full_data.csv')
         #cancer_results.displayResults("Cancer")
         #no_cancer_results.displayResults("No Cancer")
 

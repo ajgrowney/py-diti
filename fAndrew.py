@@ -23,4 +23,4 @@ def rgbProcData(im):
     b_kurt, g_kurt, r_kurt = kurtosis(b), kurtosis(g), kurtosis(r)
 
     results = [r_skew, g_skew, b_skew, r_kurt, g_kurt, b_kurt, image_mean[0], image_mean[1], image_mean[2], left_mean[0], left_mean[1], left_mean[2], right_mean[0], right_mean[1], right_mean[2]]
-    return results
+    return np.array(results)
