@@ -101,11 +101,11 @@ def main():
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
         patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
 
-        for pat in [patlist[0]]:
+        for pat in patlist:
             retinex(pat, "Images_noBG", writeToFolder='./Images_retinex/')
-        #
-        # for pat in patnocancerlist:
-        #     retinex(pat, "Images_noBG")
+        
+        for pat in patnocancerlist:
+            retinex(pat, "Images_noBG", writeToFolder='./Images_retinex/')
 
 
     elif sys.argv[1] == "noiseReduce":

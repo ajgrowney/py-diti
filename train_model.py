@@ -26,6 +26,8 @@ def main():
 
     cancer_res = []
     nocancer_res = []
+
+
     for pat in cancer_list:
 
         f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
@@ -35,7 +37,7 @@ def main():
         carter_results = np.array([0]*64)
         natalie_results = np.array([0]*10)
         cancer_label = np.array(['Y'])
-        cancer_res.append(np.concatenate([andrew_results,carter_results,natalie_results,cancer_label]).tolist())
+        cancer_res.append(np.concatenate([andrew_results,carter_results,natalie_results,cancer_label]))
 
     for pat in no_cancer_list:
         f_im = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg',1)
@@ -46,7 +48,7 @@ def main():
         natalie_results = np.array([0]*10)
         cancer_label = np.array(['N'])
 
-        nocancer_res.append(np.concatenate([andrew_results,carter_results,natalie_results,cancer_label]).tolist())
+        nocancer_res.append(np.concatenate([andrew_results,carter_results,natalie_results,cancer_label]))
 
     if arg_len == 2 and sys.argv[1] == 'model':
 
