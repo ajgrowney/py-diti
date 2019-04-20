@@ -9,6 +9,6 @@ def writeResults(cancer_res, nocancer_res, filename):
         writer = csv.writer(f)
         writer.writerow(fieldnames)
         for i in range(len(cancer_res)):
-            writer.writerow(cancer_res[i]+['Y'])
+            writer.writerow(cancer_res[i])
         for i in range(len(nocancer_res)):
-            writer.writerow(nocancer_res[i]+['N'])
+            writer.writerow(nocancer_res[i])
