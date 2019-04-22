@@ -1,2 +1,0 @@
-def tempProcData(csv):
-    return []
