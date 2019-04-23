@@ -1,1 +1,6 @@
 Images_noBG/
+Images_retinex/
+Images_csv/
+*/__pycache__/*
+Utilities/*.pyc
+Algorithms/*.pyc
