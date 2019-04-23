@@ -86,7 +86,6 @@ class resultsObj:
 
 
 def writeResultsToCsv(cancer_obj,nocancer_obj, filename):
-    print(len(nocancer_obj.means["total_f"]["r"]))
     f = open(filename,'w')
 
     with f:

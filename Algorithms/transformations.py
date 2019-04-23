@@ -1,7 +1,7 @@
 import cv2
 import os
 import matplotlib.pyplot as plt
-import colorcorrect.algorithm as cca
+# import colorcorrect.algorithm as cca
 
 
 def noiseReduce(image, folder):
