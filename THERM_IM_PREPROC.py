@@ -90,7 +90,7 @@ def main():
     elif sys.argv[1] == "compareTransform":
         im0 = cv2.imread('./Images_noBG/AguCat100309A2BA-f.jpg')
         imt = cv2.imread('./Images_retinex/AguCat100309A2BA-f.jpg')
-        compareTransformHist(im0,imt,side_of_tumor='L',display=True,limit=500,pat_id='AguCat100309')
+        compareTransformHist(im0,imt,side_of_tumor='L',display=True,limit=300,pat_id='AguCat100309')
 
     # Retinex optional parameters
     # retinex(patient_id, images_folder, setTransform=False, writeToFolder=None)
@@ -103,7 +103,7 @@ def main():
 
         for pat in patlist:
             retinex(pat, "Images_noBG", writeToFolder='./Images_retinex/')
-        
+
         for pat in patnocancerlist:
             retinex(pat, "Images_noBG", writeToFolder='./Images_retinex/')
 

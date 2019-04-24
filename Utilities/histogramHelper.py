@@ -53,6 +53,32 @@ def totalImHist(patient_list, display=True, limit=None):
         plt.show()
     return b_total, g_total, r_total
 
+
+
+def compareTransformHistChannelHelper(im_tumor,im_non_tumor, transform_tumor, transform_non_tumor, color,limit=500,pat_id=''):
+    fig1, axs1 = plt.subplots(2,1)
+
+    if pat_id:
+        fig1.suptitle(pat_id)
+
+    (ax1,ax2) = axs1.flatten()
+
+    ax1.set_title('Image- '+color)
+    ax1.hist([im_tumor,im_non_tumor],bins=np.arange(256),histtype='step', fill=False, color=[color,'black'], label=['Tumor', 'Non-Tumor'])
+    plt.legend()
+
+    ax2.set_title('Transform- '+color)
+    ax2.hist([transform_tumor,transform_non_tumor],bins=np.arange(256),color=[color,'black'], label=['Tumor', 'Non-Tumor'], histtype='step', fill=False,)
+
+    [x.set_xlim(right=256) for x in [ax1,ax2]]
+    if limit:
+        [x.set_ylim(0,limit) for x in [ax1,ax2]]
+
+
+    plt.legend()
+    plt.show()
+
+
 # Param: image { numpy.ndarray } - image read by cv2.imread
 # Param: transformed { numpy.ndarray } - image read by cv2.imread
 # Param: side_of_tumor { string } - 'L', 'R', or 'N'
@@ -72,6 +98,7 @@ def compareTransformHist(image, transformed, side_of_tumor,display=True,limit=50
         nonTumorImage = image[:,0:(im_width/2)]
         tumorTransformed = transformed[:,(transform_width/2):transform_width]
         nonTumorTransformed = transformed[:,0:(transform_width/2)]
+    
     b_tumor_im, g_tumor_im, r_tumor_im = cv2.split(tumorImage)
     b_non_tumor_im, g_non_tumor_im, r_non_tumor_im = cv2.split(nonTumorImage)
     b_tumor_transform, g_tumor_transform, r_tumor_transform = cv2.split(tumorTransformed)
@@ -83,32 +110,9 @@ def compareTransformHist(image, transformed, side_of_tumor,display=True,limit=50
     b_non_tumor_transform, g_non_tumor_transform, r_non_tumor_transform = b_non_tumor_transform.flatten(), g_non_tumor_transform.flatten(), r_non_tumor_transform.flatten()
 
     if display:
-        fig, axs = plt.subplots(6,1)
-        if pat_id:
-            fig.suptitle(pat_id)
-
-        (ax1,ax2,ax3,ax4,ax5,ax6) = axs.flatten()
-
-        ax1.set_title('Image- Blue')
-        ax1.hist([b_tumor_im,b_non_tumor_im],bins=np.arange(256),ec=None)
-        ax2.set_title('Transform- Blue')
-        ax2.hist([b_tumor_transform,b_non_tumor_transform],bins=np.arange(256),color=['blue','black'])
-        ax3.set_title('Image- Red')
-        ax3.hist([r_tumor_im,r_non_tumor_im],bins=np.arange(256),color=['red','black'])
-        ax4.set_title('Transform- Red')
-        ax4.hist([r_tumor_transform,r_non_tumor_transform],bins=np.arange(256),color=['red','black'])
-        ax5.set_title('Image- Green')
-        ax5.hist([g_tumor_im,g_non_tumor_im],bins=np.arange(256),color=['green','black'])
-        ax6.set_title('Transform- Green')
-        ax6.hist([g_tumor_transform,g_non_tumor_transform],bins=np.arange(256),color=['green','black'])
-
-        [x.set_xlim(right=256) for x in [ax1,ax2,ax3,ax4,ax5,ax6]]
-        if limit:
-            [x.set_ylim(0,limit) for x in [ax1,ax2,ax3,ax4,ax5,ax6]]
-
-
-        plt.show()
-
+        compareTransformHistChannelHelper(b_tumor_im,b_non_tumor_im,b_tumor_transform,b_non_tumor_transform,'blue',limit=limit,pat_id=pat_id)
+        compareTransformHistChannelHelper(r_tumor_im,r_non_tumor_im,r_tumor_transform,r_non_tumor_transform,'red',limit=limit,pat_id=pat_id)
+        compareTransformHistChannelHelper(g_tumor_im,g_non_tumor_im,g_tumor_transform,g_non_tumor_transform,'green',limit=limit,pat_id=pat_id)
 
 
 
