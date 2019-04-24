@@ -10,39 +10,20 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import FastICA, PCA
 
+# Local Function Imports
 from Algorithms.transformations import noiseReduce, retinex
 from Algorithms.imageCSVConversion import csvToImage, imageToCSV
 from Algorithms.rgbData import rgbProcDataDevelopment
 from Utilities.histogramHelper import singleImHist, totalImHist, compareTransformHist
 from Utilities.resultsDevObj import resultsObj, writeResultsToCsv
 
-# Description:
-# @Param im {CV2 image object/ np.ndarray } - image object converted to grayscale for analysis
-def grayProcData(im):
-    # Edge Detection
-
-    sobel_x = cv2.Sobel(im, cv2.CV_64F,1,0,ksize=5)
-    sobel_y = cv2.Sobel(im, cv2.CV_64F,0,1,ksize=5)
-    laplacian = cv2.Laplacian(im, cv2.CV_64F)
-    canny = cv2.Canny(im,300,200)
-    plt.subplot(2,2,1), plt.imshow(im,cmap='gray')
-    plt.subplot(2,2,2), plt.imshow(sobel_y, cmap='gray')
-    plt.subplot(2,2,3), plt.imImagesshow(laplacian)
-    plt.subplot(2,2,4), plt.imshow(canny)
-    plt.show()
-    return
 
 # Description:
 # @Param: image{'*.jpg','*.png'} - image to be analyzed and processed into classifier data
 # @Param: new_file_name {String} -
 def preProcImage(image, folder):
     f_im = cv2.imread('./'+folder+'/'+image+'A2BA-f.jpg',1)
-    b,g,r = cv2.split(f_im)
-    f_im = cv2.merge([r,g,b])
     fc_im = cv2.imread('./'+folder+'/'+image+'A2BA-fc.jpg',1)
-    b,g,r = cv2.split(fc_im)
-    fc_im = cv2.merge([r,g,b])
-
 
     # Utilize the RGB Colorspace to analyze the image and pull statistics
     rgb_proc_f = rgbProcDataDevelopment(f_im)
@@ -57,18 +38,20 @@ def getPatients(patients_path):
     return patlist
 
 
+# Available Commands for sys.argv[1]: frontDataAll, compareTransform, retinex, noiseReduce, singleImageHist, totalImageHist, imageToCsv, csvToImage
 def main():
-    arg_len = len(sys.argv)
 
+    # Front Data All
+    # Command: python THERM_IM_PREPROC.py 'frontDataAll' ['write' and/or 'display']
     if sys.argv[1] == "frontDataAll":
-        # Results Object
-        cancer_results = resultsObj()
-        no_cancer_results = resultsObj()
+        # Results Object Creation
+        cancer_results, no_cancer_results = resultsObj(), resultsObj()
 
         # Get patient id lists to retrieve image files
         patlist = getPatients("./patientAssignments/patients_cancer.txt")
         patnocancerlist = getPatients("./patientAssignments/patients_nocancer.txt")
 
+        # Compile Results for the Cancerous Image Set
         for pat in patlist:
             try:
                 pat_res_f, pat_res_fc = preProcImage(pat, "Images_noBG")
@@ -76,6 +59,7 @@ def main():
             except Exception as e:
                 print("Error", e)
 
+        # Compile Results for the Non-Cancerous Image Set
         for pat in patnocancerlist:
             try:
                 pat_res_f,pat_res_fc = preProcImage(pat, "Images_noBG")
@@ -83,14 +67,20 @@ def main():
             except Exception as e:
                 print("Error",e.message)
 
-        writeResultsToCsv(cancer_results,no_cancer_results,'./full_data.csv')
-        #cancer_results.displayResults("Cancer")
-        #no_cancer_results.displayResults("No Cancer")
+        if len(sys.argv) > 2:
+            if 'write' in sys.argv:
+                writeResultsToCsv(cancer_results,no_cancer_results,'./full_data.csv')
+
+            if 'display' in sys.argv:
+                cancer_results.displayResults("Cancer")
+                no_cancer_results.displayResults("No Cancer")
 
     elif sys.argv[1] == "compareTransform":
-        im0 = cv2.imread('./Images_noBG/AguCat100309A2BA-f.jpg')
-        imt = cv2.imread('./Images_retinex/AguCat100309A2BA-f.jpg')
-        compareTransformHist(im0,imt,side_of_tumor='L',display=True,limit=300,pat_id='AguCat100309')
+
+        pat = sys.argv[2] if len(sys.argv) > 2 else 'AguCat100309'
+        im0 = cv2.imread('./Images_noBG/'+pat+'A2BA-f.jpg')
+        imt = cv2.imread('./Images_retinex/'+pat+'A2BA-f.jpg')
+        compareTransformHist(im0,imt,side_of_tumor='L',display=True,limit=500,pat_id=pat)
 
     # Retinex optional parameters
     # retinex(patient_id, images_folder, setTransform=False, writeToFolder=None)
@@ -109,7 +99,7 @@ def main():
 
 
     elif sys.argv[1] == "noiseReduce":
-        print(noiseReduce("EscMar261010","Images_noBG"))
+        noiseReduce("EscMar261010","Images_noBG")
 
     elif sys.argv[1] == "singleImageHist":
 
